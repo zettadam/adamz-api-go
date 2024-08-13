@@ -16,8 +16,5 @@ func main () {
     fmt.Fprintf(w, "Hello world!\nVersion: 1.0.0\n" + hostname + "\n")
   })
 
-  fs := http.FileServer(http.Dir("static/"))
-  http.Handle("/static/", http.StripPrefix("/static/", fs))
-
   http.ListenAndServe(":8080", nil)
 }
