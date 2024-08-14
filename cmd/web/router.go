@@ -2,11 +2,10 @@ package web
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
-
-	"github.com/zettadam/adamz-api-go/internal/config"
 )
 
 type route struct {
@@ -63,11 +62,11 @@ func register(method, pattern string, handler http.HandlerFunc) route {
 	return route{method, regexp.MustCompile("^" + pattern + "$"), handler}
 }
 
-func Router(app *config.Application) http.HandlerFunc {
+func Router() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var allow []string
 
-		app.InfoLog.Printf("Request: %s", r.URL)
+		slog.Info("Request: ", "URL", r.URL)
 
 		for _, route := range routes {
 			matches := route.regex.FindStringSubmatch(r.URL.Path)
@@ -84,13 +83,13 @@ func Router(app *config.Application) http.HandlerFunc {
 
 		if len(allow) > 0 {
 			w.Header().Set("Allow", strings.Join(allow, ", "))
-			app.ErrorLog.Printf("Method %s not allowed", r.Method)
+			slog.Error("Method not allowed", "Method", r.Method)
 			http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
 
 			return
 		}
 
-		app.ErrorLog.Printf("Route not found: %s", r.URL)
+		slog.Error("Route not found", "URL", r.URL)
 		http.NotFound(w, r)
 	})
 }

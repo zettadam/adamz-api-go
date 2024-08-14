@@ -2,13 +2,12 @@ package main
 
 import (
 	"flag"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/zettadam/adamz-api-go/cmd/web"
-	"github.com/zettadam/adamz-api-go/internal/config"
 )
 
 type configuration struct {
@@ -20,19 +19,17 @@ type configuration struct {
 func main() {
 	// --------------------------------------------------------------------------
 	// Logging
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
-	app := &config.Application{
-		InfoLog:  log.New(os.Stdout, "INFO:\t", log.LstdFlags|log.Ldate|log.Ltime|log.Lshortfile),
-		ErrorLog: log.New(os.Stderr, "ERROR:\t", log.LstdFlags|log.Ldate|log.Ltime|log.Lshortfile),
-	}
+	slog.SetDefault(logger)
 
-	err := start(app)
+	err := start()
 	if err != nil {
-		app.ErrorLog.Fatal(err)
+		slog.Error("Error starting application.")
 	}
 }
 
-func start(app *config.Application) error {
+func start() error {
 	var cfg configuration
 
 	// --------------------------------------------------------------------------
@@ -49,13 +46,13 @@ func start(app *config.Application) error {
 
 	server := &http.Server{
 		Addr:         cfg.addr,
-		Handler:      web.Router(app),
+		Handler:      web.Router(),
 		ReadTimeout:  cfg.rtimeout * time.Second,
 		WriteTimeout: cfg.wtimeout * time.Second,
 	}
 
-	app.InfoLog.Printf("Server created with flags %s, %s, %s", cfg.addr, cfg.rtimeout, cfg.wtimeout)
-	app.InfoLog.Printf("Server is listening on %s", cfg.addr)
+	slog.Info("Server created with flags", "cfg", cfg)
+	slog.Info("Server is listening", "addr", cfg.addr)
 
 	return server.ListenAndServe()
 }
