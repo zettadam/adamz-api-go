@@ -31,14 +31,14 @@ func (c Configuration) LogValue() slog.Value {
 func main() {
 	err := start()
 	if err != nil {
-		log.Fatal("Error starting server")
+		log.Fatal("Error starting server", err)
 	}
 }
 
 func start() error {
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Fatal("Unable to determine working directory")
+		log.Fatal("Unable to determine working directory", err)
 	}
 
 	var cfg Configuration
