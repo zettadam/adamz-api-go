@@ -16,8 +16,8 @@ func ReadPosts(w http.ResponseWriter, r *http.Request) {
 }
 
 func ReadPostDetail(w http.ResponseWriter, r *http.Request) {
-	msg := "PostDetail"
-	fmt.Fprint(w, msg)
+	id := GetPathParams(r, 0)
+	fmt.Fprintf(w, "PostDetail (%s)", id)
 }
 
 func CreatePost(w http.ResponseWriter, r *http.Request) {
@@ -26,11 +26,11 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdatePost(w http.ResponseWriter, r *http.Request) {
-	msg := "UpdatePost"
-	fmt.Fprint(w, msg)
+	id := GetPathParams(r, 0)
+	fmt.Fprintf(w, "UpdatePost (%s)", id)
 }
 
 func DeletePost(w http.ResponseWriter, r *http.Request) {
-	msg := "DeletePost"
-	fmt.Fprint(w, msg)
+	id := GetPathParams(r, 0)
+	fmt.Fprintf(w, "DeletePost (%s)", id)
 }
