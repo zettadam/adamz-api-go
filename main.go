@@ -53,10 +53,10 @@ func start() error {
 	flag.StringVar(&cfg.logLevel, "logLevel", slog.LevelError.String(), "Logging level: INFO, WARN, ERROR, DEBUG")
 	flag.DurationVar(&cfg.rtimeout, "rtimeout", 5*time.Second, "Read timeout (in seconds)")
 	flag.DurationVar(&cfg.wtimeout, "wtimeout", 5*time.Second, "Write timeout (in seconds)")
-
 	flag.Parse()
 
 	setupLogging(cfg, wd)
+
 	r := setupRouter(cfg)
 
 	server := setupServer(cfg, r)
@@ -66,15 +66,14 @@ func start() error {
 }
 
 func setupLogging(cfg Configuration, wd string) {
-	logLevel := new(slog.LevelVar)
-	loggerOptions := &slog.HandlerOptions{
-		Level: logLevel,
+	lvl := new(slog.LevelVar)
+	opts := &slog.HandlerOptions{
+		Level: lvl,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.SourceKey {
-				source := a.Value.Any().(*slog.Source)
-				// remove current working directory and only leave the relative path to the program
-				if file, ok := strings.CutPrefix(source.File, wd); ok {
-					source.File = file
+				s := a.Value.Any().(*slog.Source)
+				if f, ok := strings.CutPrefix(s.File, wd); ok {
+					s.File = f
 				}
 			}
 			return a
@@ -82,13 +81,13 @@ func setupLogging(cfg Configuration, wd string) {
 	}
 
 	if cfg.logLevel == "DEBUG" {
-		logLevel.Set(slog.LevelDebug)
-		loggerOptions.AddSource = true
+		lvl.Set(slog.LevelDebug)
+		opts.AddSource = true
 	}
 
-	logger := slog.New(slog.NewTextHandler(os.Stderr, loggerOptions))
+	l := slog.New(slog.NewTextHandler(os.Stderr, opts))
 
-	slog.SetDefault(logger)
+	slog.SetDefault(l)
 }
 
 func setupRouter(cfg Configuration) http.Handler {
