@@ -11,6 +11,7 @@ import (
 
 	chi "github.com/go-chi/chi/v5"
 	middleware "github.com/go-chi/chi/v5/middleware"
+
 	"github.com/zettadam/adamz-api-go/cmd/web"
 )
 
@@ -55,9 +56,16 @@ func start() error {
 
 	flag.Parse()
 
-	// --------------------------------------------------------------------------
-	// LOGGING
+	setupLogging(cfg, wd)
+	r := setupRouter(cfg)
 
+	server := setupServer(cfg, r)
+
+	slog.Info("Server is listening", slog.String("addr", cfg.addr))
+	return server.ListenAndServe()
+}
+
+func setupLogging(cfg Configuration, wd string) {
 	logLevel := new(slog.LevelVar)
 	loggerOptions := &slog.HandlerOptions{
 		Level: logLevel,
@@ -81,13 +89,9 @@ func start() error {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, loggerOptions))
 
 	slog.SetDefault(logger)
+}
 
-	// --------------------------------------------------------------------------
-	// DATABASE
-
-	// --------------------------------------------------------------------------
-	// ROUTER
-
+func setupRouter(cfg Configuration) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -105,18 +109,18 @@ func start() error {
 	r.Mount("/tasks", web.TasksRouter())
 	r.Mount("/calendar", web.CalendarRouter())
 
-	// --------------------------------------------------------------------------
-	// SERVER
+	return r
+}
 
+func setupServer(cfg Configuration, handler http.Handler) *http.Server {
 	server := &http.Server{
 		Addr:         cfg.addr,
-		Handler:      r,
+		Handler:      handler,
 		ReadTimeout:  cfg.rtimeout * time.Second,
 		WriteTimeout: cfg.wtimeout * time.Second,
 	}
 
 	slog.Info("Server created with configuration", slog.Any("cfg", cfg))
-	slog.Info("Server is listening", slog.String("addr", cfg.addr))
 
-	return server.ListenAndServe()
+	return server
 }
