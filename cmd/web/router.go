@@ -66,7 +66,12 @@ func Router() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var allow []string
 
-		slog.Info("Request", "method", r.Method, "URL", r.URL)
+		slog.Info("REQUEST",
+			slog.Group(
+				"r",
+				slog.String("method", r.Method),
+				slog.String("URL", r.URL.String()),
+			))
 
 		for _, route := range routes {
 			matches := route.regex.FindStringSubmatch(r.URL.Path)
@@ -83,13 +88,13 @@ func Router() http.HandlerFunc {
 
 		if len(allow) > 0 {
 			w.Header().Set("Allow", strings.Join(allow, ", "))
-			slog.Error("Method not allowed", "Method", r.Method)
+			slog.Error("Method not allowed", slog.String("Method", r.Method))
 			http.Error(w, "405 method not allowed", http.StatusMethodNotAllowed)
 
 			return
 		}
 
-		slog.Error("Route not found", "URL", r.URL)
+		slog.Error("Route not found", slog.String("URL", r.URL.String()))
 		http.NotFound(w, r)
 	})
 }
