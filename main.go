@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	chi "github.com/go-chi/chi/v5"
+	middleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/zettadam/adamz-api-go/cmd/web"
 )
 
@@ -44,7 +46,7 @@ func start() error {
 	var cfg Configuration
 
 	// --------------------------------------------------------------------------
-	// CLI Flags -> Configuration
+	// CLI FLAGS -> CONFIGURATION
 
 	flag.StringVar(&cfg.addr, "addr", ":3000", "HTTP network address")
 	flag.StringVar(&cfg.logLevel, "logLevel", slog.LevelError.String(), "Logging level: INFO, WARN, ERROR, DEBUG")
@@ -54,7 +56,7 @@ func start() error {
 	flag.Parse()
 
 	// --------------------------------------------------------------------------
-	// Logging
+	// LOGGING
 
 	logLevel := new(slog.LevelVar)
 	loggerOptions := &slog.HandlerOptions{
@@ -81,11 +83,34 @@ func start() error {
 	slog.SetDefault(logger)
 
 	// --------------------------------------------------------------------------
-	// Server
+	// DATABASE
+
+	// --------------------------------------------------------------------------
+	// ROUTER
+
+	r := chi.NewRouter()
+
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	r.Use(middleware.Timeout(cfg.rtimeout * time.Second))
+
+	r.Get("/", web.Home)
+	r.Mount("/posts", web.PostsRouter())
+	r.Mount("/notes", web.NotesRouter())
+	r.Mount("/code", web.CodeSnippetsRouter())
+	r.Mount("/links", web.LinksRouter())
+	r.Mount("/tasks", web.TasksRouter())
+	r.Mount("/calendar", web.CalendarRouter())
+
+	// --------------------------------------------------------------------------
+	// SERVER
 
 	server := &http.Server{
 		Addr:         cfg.addr,
-		Handler:      web.Router(),
+		Handler:      r,
 		ReadTimeout:  cfg.rtimeout * time.Second,
 		WriteTimeout: cfg.wtimeout * time.Second,
 	}

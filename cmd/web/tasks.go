@@ -3,34 +3,45 @@ package web
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
-func ReadLatestTasks(w http.ResponseWriter, r *http.Request) {
+func TasksRouter() http.Handler {
+	r := chi.NewRouter()
+
+	r.Get("/", readLatestTasks)
+	r.Route("/{taskID}", func(r chi.Router) {
+		r.Get("/", readTaskDetail)
+		r.Post("/", createTask)
+		r.Put("/", updateTask)
+		r.Delete("/", deleteTask)
+	})
+
+	return r
+}
+
+func readLatestTasks(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadLatestTasks"
 	fmt.Fprint(w, msg)
 }
 
-func ReadTasks(w http.ResponseWriter, r *http.Request) {
-	msg := "ReadTasks"
-	fmt.Fprint(w, msg)
-}
-
-func ReadTaskDetail(w http.ResponseWriter, r *http.Request) {
+func readTaskDetail(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadtaskDetail"
 	fmt.Fprint(w, msg)
 }
 
-func CreateTask(w http.ResponseWriter, r *http.Request) {
+func createTask(w http.ResponseWriter, r *http.Request) {
 	msg := "CreateTask"
 	fmt.Fprint(w, msg)
 }
 
-func UpdateTask(w http.ResponseWriter, r *http.Request) {
+func updateTask(w http.ResponseWriter, r *http.Request) {
 	msg := "UpdateTask"
 	fmt.Fprint(w, msg)
 }
 
-func DeleteTask(w http.ResponseWriter, r *http.Request) {
+func deleteTask(w http.ResponseWriter, r *http.Request) {
 	msg := "DeleteTask"
 	fmt.Fprint(w, msg)
 }

@@ -3,9 +3,19 @@ package web
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
-func Calendar(w http.ResponseWriter, r *http.Request) {
+func CalendarRouter() http.Handler {
+	r := chi.NewRouter()
+
+	r.Get("/", readLatestCalendar)
+
+	return r
+}
+
+func readLatestCalendar(w http.ResponseWriter, r *http.Request) {
 	msg := "Calendar"
 	fmt.Fprint(w, msg)
 }

@@ -3,34 +3,45 @@ package web
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
-func ReadLatestLinks(w http.ResponseWriter, r *http.Request) {
+func LinksRouter() http.Handler {
+	r := chi.NewRouter()
+
+	r.Get("/", readLatestLinks)
+	r.Route("/{linkID}", func(r chi.Router) {
+		r.Get("/", readLinkDetail)
+		r.Post("/", createLink)
+		r.Put("/", updateLink)
+		r.Delete("/", deleteLink)
+	})
+
+	return r
+}
+
+func readLatestLinks(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadLatestLinks"
 	fmt.Fprint(w, msg)
 }
 
-func ReadLinks(w http.ResponseWriter, r *http.Request) {
-	msg := "ReadLinks"
-	fmt.Fprint(w, msg)
-}
-
-func ReadLinkDetail(w http.ResponseWriter, r *http.Request) {
+func readLinkDetail(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadLinkDetail"
 	fmt.Fprint(w, msg)
 }
 
-func CreateLink(w http.ResponseWriter, r *http.Request) {
+func createLink(w http.ResponseWriter, r *http.Request) {
 	msg := "CreateLink"
 	fmt.Fprint(w, msg)
 }
 
-func UpdateLink(w http.ResponseWriter, r *http.Request) {
+func updateLink(w http.ResponseWriter, r *http.Request) {
 	msg := "UpdateLink"
 	fmt.Fprint(w, msg)
 }
 
-func DeleteLink(w http.ResponseWriter, r *http.Request) {
+func deleteLink(w http.ResponseWriter, r *http.Request) {
 	msg := "DeleteLink"
 	fmt.Fprint(w, msg)
 }
