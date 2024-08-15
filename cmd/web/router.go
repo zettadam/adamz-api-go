@@ -66,7 +66,7 @@ func Router() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var allow []string
 
-		slog.Info("Request: ", "URL", r.URL)
+		slog.Info("Request", "method", r.Method, "URL", r.URL)
 
 		for _, route := range routes {
 			matches := route.regex.FindStringSubmatch(r.URL.Path)
@@ -94,7 +94,7 @@ func Router() http.HandlerFunc {
 	})
 }
 
-func getField(r *http.Request, index int) string {
-	fields := r.Context().Value(ctxKey{}).([]string)
-	return fields[index]
+func GetPathParams(r *http.Request, index int) string {
+	params := r.Context().Value(ctxKey{}).([]string)
+	return params[index]
 }
