@@ -29,8 +29,15 @@ func (c Configuration) LogValue() slog.Value {
 }
 
 func main() {
-	wd, err0 := os.Getwd()
-	if err0 != nil {
+	err := start()
+	if err != nil {
+		log.Fatal("Error starting server")
+	}
+}
+
+func start() error {
+	wd, err := os.Getwd()
+	if err != nil {
 		log.Fatal("Unable to determine working directory")
 	}
 
@@ -73,15 +80,6 @@ func main() {
 
 	slog.SetDefault(logger)
 
-	// --------------------------------------------------------------------------
-	// Start
-	err := start(cfg)
-	if err != nil {
-		slog.Error("Error starting server", slog.String("err", err.Error()))
-	}
-}
-
-func start(cfg Configuration) error {
 	// --------------------------------------------------------------------------
 	// Server
 
