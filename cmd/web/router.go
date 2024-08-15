@@ -21,35 +21,35 @@ var routes = []route{
 
 	// Posts
 	register("GET", "/posts", ReadLatestPosts),
-	register("POST", "/posts/new", CreatePost),
+	register("POST", "/posts", CreatePost),
 	register("GET", "/posts/([^/]+)", ReadPostDetail),
 	register("PUT", "/posts/([^/]+)", UpdatePost),
 	register("DELETE", "/posts/([^/]+)", DeletePost),
 
 	// Notes
 	register("GET", "/notes", ReadLatestNotes),
-	register("POST", "/notes/new", CreateNote),
+	register("POST", "/notes", CreateNote),
 	register("GET", "/notes/([^/]+)", ReadNoteDetail),
 	register("PUT", "/notes/([^/]+)", UpdateNote),
 	register("DELETE", "/notes/([^/])", DeleteNote),
 
 	// Code Snippets
 	register("GET", "/code", ReadLatestCodeSnippets),
-	register("POST", "/code/new", CreateCodeSnippet),
+	register("POST", "/code", CreateCodeSnippet),
 	register("GET", "/code/([^/]+)", ReadCodeSnippetDetail),
 	register("PUT", "/code/([^/]+)", UpdateCodeSnippet),
 	register("DELETE", "/code/([^/]+)", DeleteCodeSnippet),
 
 	// Links
 	register("GET", "/links", ReadLatestLinks),
-	register("POST", "/links/new", CreateLink),
+	register("POST", "/links", CreateLink),
 	register("GET", "/links/([^/]+)", ReadLinkDetail),
 	register("PUT", "/links/([^/]+)", UpdateLink),
 	register("DELETE", "/links/([^/]+)", DeleteLink),
 
 	// Tasks
 	register("GET", "/tasks", ReadLatestTasks),
-	register("POST", "/tasks/new", CreateTask),
+	register("POST", "/tasks", CreateTask),
 	register("GET", "/tasks/([^/]+)", ReadTaskDetail),
 	register("PUT", "/tasks/([^/]+)", UpdateTask),
 	register("DELETE", "/tasks/([^/]+)", DeleteTask),
