@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 
 	chi "github.com/go-chi/chi/v5"
 	middleware "github.com/go-chi/chi/v5/middleware"
+	pgxpool "github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/zettadam/adamz-api-go/cmd/web"
 )
@@ -55,12 +57,27 @@ func start() error {
 	flag.DurationVar(&cfg.wtimeout, "wtimeout", 5*time.Second, "Write timeout (in seconds)")
 	flag.Parse()
 
+	// --------------------------------------------------------------------------
+	// LOGGING
 	setupLogging(cfg, wd)
 
+	// --------------------------------------------------------------------------
+	// DATABASE
+	dbpool, err := connectDB()
+	if err != nil {
+		log.Fatal("Unable to connect to database", err)
+	}
+	defer dbpool.Close()
+
+	// --------------------------------------------------------------------------
+	// ROUTING
 	r := setupRouter(cfg)
 
+	// --------------------------------------------------------------------------
+	// SERVER
 	server := setupServer(cfg, r)
 
+	// GO!
 	slog.Info("Server is listening", slog.String("addr", cfg.addr))
 	return server.ListenAndServe()
 }
@@ -88,6 +105,15 @@ func setupLogging(cfg Configuration, wd string) {
 	l := slog.New(slog.NewTextHandler(os.Stderr, opts))
 
 	slog.SetDefault(l)
+}
+
+func connectDB() (*pgxpool.Pool, error) {
+	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		return nil, err
+	}
+
+	return dbpool, nil
 }
 
 func setupRouter(cfg Configuration) http.Handler {
