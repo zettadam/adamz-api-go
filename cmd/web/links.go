@@ -12,25 +12,25 @@ import (
 func LinksRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", readLatestLinks)
-	r.Post("/", createLink)
+	r.Get("/", handleReadLatestLinks)
+	r.Post("/", handleCreateLink)
 
 	r.Route("/{id}", func(r chi.Router) {
 		r.Use(linkCtx)
-		r.Get("/", readLink)
-		r.Put("/", updateLink)
-		r.Delete("/", deleteLink)
+		r.Get("/", handleReadLink)
+		r.Put("/", handleUpdateLink)
+		r.Delete("/", handleDeleteLink)
 	})
 
 	return r
 }
 
-func readLatestLinks(w http.ResponseWriter, r *http.Request) {
+func handleReadLatestLinks(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadLatestLinks"
 	fmt.Fprint(w, msg)
 }
 
-func createLink(w http.ResponseWriter, r *http.Request) {
+func handleCreateLink(w http.ResponseWriter, r *http.Request) {
 	msg := "CreateLink"
 	fmt.Fprint(w, msg)
 }
@@ -56,17 +56,17 @@ func linkCtx(next http.Handler) http.Handler {
 	})
 }
 
-func readLink(w http.ResponseWriter, r *http.Request) {
+func handleReadLink(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadLink"
 	fmt.Fprint(w, msg)
 }
 
-func updateLink(w http.ResponseWriter, r *http.Request) {
+func handleUpdateLink(w http.ResponseWriter, r *http.Request) {
 	msg := "UpdateLink"
 	fmt.Fprint(w, msg)
 }
 
-func deleteLink(w http.ResponseWriter, r *http.Request) {
+func handleDeleteLink(w http.ResponseWriter, r *http.Request) {
 	msg := "DeleteLink"
 	fmt.Fprint(w, msg)
 }

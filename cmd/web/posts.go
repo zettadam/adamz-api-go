@@ -14,25 +14,25 @@ import (
 func PostsRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", readLatestPosts)
-	r.Post("/", createPost)
+	r.Get("/", handleReadLatestPosts)
+	r.Post("/", handleCreatePost)
 
 	r.Route("/{id}", func(r chi.Router) {
 		r.Use(postCtx)
-		r.Get("/", readPost)
-		r.Put("/", updatePost)
-		r.Delete("/", deletePost)
+		r.Get("/", handleReadPost)
+		r.Put("/", handleUpdatePost)
+		r.Delete("/", handleDeletePost)
 	})
 
 	return r
 }
 
-func readLatestPosts(w http.ResponseWriter, r *http.Request) {
+func handleReadLatestPosts(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadLatestPosts"
 	fmt.Fprint(w, msg)
 }
 
-func createPost(w http.ResponseWriter, r *http.Request) {
+func handleCreatePost(w http.ResponseWriter, r *http.Request) {
 	var post *models.Post
 	json.NewDecoder(r.Body).Decode(&post)
 
@@ -60,19 +60,19 @@ func postCtx(next http.Handler) http.Handler {
 	})
 }
 
-func readPost(w http.ResponseWriter, r *http.Request) {
+func handleReadPost(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value("id")
 
 	fmt.Fprintf(w, "ReadPost (%s)", id)
 }
 
-func updatePost(w http.ResponseWriter, r *http.Request) {
+func handleUpdatePost(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value("id")
 
 	fmt.Fprintf(w, "UpdatePost (%s)", id)
 }
 
-func deletePost(w http.ResponseWriter, r *http.Request) {
+func handleDeletePost(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value("id")
 
 	fmt.Fprintf(w, "DeletePost (%s)", id)

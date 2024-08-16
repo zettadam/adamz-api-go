@@ -126,7 +126,7 @@ func setupRouter(cfg Configuration) http.Handler {
 
 	r.Use(middleware.Timeout(cfg.rtimeout * time.Second))
 
-	r.Get("/", web.Home)
+	r.Get("/", web.HandleHome)
 	r.Mount("/posts", web.PostsRouter())
 	r.Mount("/notes", web.NotesRouter())
 	r.Mount("/code", web.CodeSnippetsRouter())

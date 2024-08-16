@@ -10,12 +10,12 @@ import (
 func CalendarRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", readLatestCalendar)
+	r.Get("/", handleReadLatestCalendar)
 
 	return r
 }
 
-func readLatestCalendar(w http.ResponseWriter, r *http.Request) {
+func handleReadLatestCalendar(w http.ResponseWriter, r *http.Request) {
 	msg := "Calendar"
 	fmt.Fprint(w, msg)
 }

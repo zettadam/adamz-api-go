@@ -12,25 +12,25 @@ import (
 func NotesRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", readLatestNotes)
-	r.Post("/", createNote)
+	r.Get("/", handleReadLatestNotes)
+	r.Post("/", handleCreateNote)
 
 	r.Route("/{id}", func(r chi.Router) {
 		r.Use(noteCtx)
-		r.Get("/", readNote)
-		r.Put("/", updateNote)
-		r.Delete("/", deleteNote)
+		r.Get("/", handleReadNote)
+		r.Put("/", handleUpdateNote)
+		r.Delete("/", handleDeleteNote)
 	})
 
 	return r
 }
 
-func readLatestNotes(w http.ResponseWriter, r *http.Request) {
+func handleReadLatestNotes(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadLatestNotes"
 	fmt.Fprint(w, msg)
 }
 
-func createNote(w http.ResponseWriter, r *http.Request) {
+func handleCreateNote(w http.ResponseWriter, r *http.Request) {
 	msg := "CreateNote"
 	fmt.Fprint(w, msg)
 }
@@ -56,17 +56,17 @@ func noteCtx(next http.Handler) http.Handler {
 	})
 }
 
-func readNote(w http.ResponseWriter, r *http.Request) {
+func handleReadNote(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadNote"
 	fmt.Fprint(w, msg)
 }
 
-func updateNote(w http.ResponseWriter, r *http.Request) {
+func handleUpdateNote(w http.ResponseWriter, r *http.Request) {
 	msg := "UpdateNote"
 	fmt.Fprint(w, msg)
 }
 
-func deleteNote(w http.ResponseWriter, r *http.Request) {
+func handleDeleteNote(w http.ResponseWriter, r *http.Request) {
 	msg := "DeleteNote"
 	fmt.Fprint(w, msg)
 }

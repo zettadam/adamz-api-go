@@ -12,25 +12,25 @@ import (
 func TasksRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", readLatestTasks)
-	r.Post("/", createTask)
+	r.Get("/", handleReadLatestTasks)
+	r.Post("/", handleCreateTask)
 
 	r.Route("/{id}", func(r chi.Router) {
 		r.Use(taskCtx)
-		r.Get("/", readTask)
-		r.Put("/", updateTask)
-		r.Delete("/", deleteTask)
+		r.Get("/", handleReadTask)
+		r.Put("/", handleUpdateTask)
+		r.Delete("/", handleDeleteTask)
 	})
 
 	return r
 }
 
-func readLatestTasks(w http.ResponseWriter, r *http.Request) {
+func handleReadLatestTasks(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadLatestTasks"
 	fmt.Fprint(w, msg)
 }
 
-func createTask(w http.ResponseWriter, r *http.Request) {
+func handleCreateTask(w http.ResponseWriter, r *http.Request) {
 	msg := "CreateTask"
 	fmt.Fprint(w, msg)
 }
@@ -56,17 +56,17 @@ func taskCtx(next http.Handler) http.Handler {
 	})
 }
 
-func readTask(w http.ResponseWriter, r *http.Request) {
+func handleReadTask(w http.ResponseWriter, r *http.Request) {
 	msg := "ReadTask"
 	fmt.Fprint(w, msg)
 }
 
-func updateTask(w http.ResponseWriter, r *http.Request) {
+func handleUpdateTask(w http.ResponseWriter, r *http.Request) {
 	msg := "UpdateTask"
 	fmt.Fprint(w, msg)
 }
 
-func deleteTask(w http.ResponseWriter, r *http.Request) {
+func handleDeleteTask(w http.ResponseWriter, r *http.Request) {
 	msg := "DeleteTask"
 	fmt.Fprint(w, msg)
 }

@@ -12,26 +12,26 @@ import (
 func CodeSnippetsRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", readLatestCodeSnippets)
-	r.Post("/", createCodeSnippet)
+	r.Get("/", handleReadLatestCodeSnippets)
+	r.Post("/", handleCreateCodeSnippet)
 
 	r.Route("/{snippetID}", func(r chi.Router) {
 		r.Use(codeSnippetCtx)
-		r.Get("/", readCodeSnippet)
-		r.Put("/", updateCodeSnippet)
-		r.Delete("/", deleteCodeSnippet)
+		r.Get("/", handleReadCodeSnippet)
+		r.Put("/", handleUpdateCodeSnippet)
+		r.Delete("/", handleDeleteCodeSnippet)
 	})
 
 	return r
 }
 
-func readLatestCodeSnippets(w http.ResponseWriter, r *http.Request) {
-	msg := "ReadLatestCodeSnippets"
+func handleReadLatestCodeSnippets(w http.ResponseWriter, r *http.Request) {
+	msg := "CodeSnippets: ReadLatest"
 	fmt.Fprint(w, msg)
 }
 
-func createCodeSnippet(w http.ResponseWriter, r *http.Request) {
-	msg := "CreateCodeSnippet"
+func handleCreateCodeSnippet(w http.ResponseWriter, r *http.Request) {
+	msg := "CodeSnippets: CreateOne"
 	fmt.Fprint(w, msg)
 }
 
@@ -56,17 +56,17 @@ func codeSnippetCtx(next http.Handler) http.Handler {
 	})
 }
 
-func readCodeSnippet(w http.ResponseWriter, r *http.Request) {
-	msg := "ReadCodeSnippet"
+func handleReadCodeSnippet(w http.ResponseWriter, r *http.Request) {
+	msg := "Code Snippets: ReadOne"
 	fmt.Fprint(w, msg)
 }
 
-func updateCodeSnippet(w http.ResponseWriter, r *http.Request) {
-	msg := "UpdateCodeSnippet"
+func handleUpdateCodeSnippet(w http.ResponseWriter, r *http.Request) {
+	msg := "CodeSnippets: UpdateOne"
 	fmt.Fprint(w, msg)
 }
 
-func deleteCodeSnippet(w http.ResponseWriter, r *http.Request) {
-	msg := "DeleteCodeSnippet"
+func handleDeleteCodeSnippet(w http.ResponseWriter, r *http.Request) {
+	msg := "CodeSnippets: DeleteOne"
 	fmt.Fprint(w, msg)
 }
