@@ -8,15 +8,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/zettadam/adamz-api-go/internal/models"
 )
-
-type Post struct {
-	Id          any    `json:"id"`
-	Title       string `json:"title"`
-	Slug        string `json:"slug"`
-	Body        string `json:"body"`
-	PublishedAt string `json:"publishedAt"`
-}
 
 func PostsRouter() http.Handler {
 	r := chi.NewRouter()
@@ -40,7 +33,7 @@ func readLatestPosts(w http.ResponseWriter, r *http.Request) {
 }
 
 func createPost(w http.ResponseWriter, r *http.Request) {
-	var post *Post
+	var post *models.Post
 	json.NewDecoder(r.Body).Decode(&post)
 
 	fmt.Fprintf(w, "Created post %#v", post)
@@ -70,23 +63,7 @@ func postCtx(next http.Handler) http.Handler {
 func readPost(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value("id")
 
-	var post Post
-
-	w.Header().Add("Content-Type", "application/json")
-
-	if id != "" {
-		post = Post{
-			Id:          id,
-			Title:       "First post",
-			Slug:        "first-post",
-			Body:        "<p>This is my first post.</p>",
-			PublishedAt: "2024-08-15T12:34:00Z",
-		}
-	} else {
-		post = Post{}
-	}
-
-	json.NewEncoder(w).Encode(post)
+	fmt.Fprintf(w, "ReadPost (%s)", id)
 }
 
 func updatePost(w http.ResponseWriter, r *http.Request) {
