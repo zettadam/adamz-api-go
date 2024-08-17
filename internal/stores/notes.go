@@ -1,103 +1,60 @@
 package stores
 
 import (
-	"database/sql"
-	"errors"
+	"context"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/zettadam/adamz-api-go/internal/models"
 )
 
 type NoteStore struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
-func (s *NoteStore) readLatest(limit int) ([]*models.Note, error) {
+func (s *NoteStore) ReadLatest(limit int) ([]models.Note, error) {
 	rows, err := s.DB.Query(
-		`SELECT * FROM notes 
-      ORDER BY published_at DESC, created_at DESC 
+		context.Background(),
+		`SELECT * FROM notes
+      ORDER BY published_at DESC, created_at DESC
       LIMIT $1`,
 		limit)
 	if err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
-
-	data := []*models.Note{}
-	for rows.Next() {
-		d := &models.Note{}
-		err = rows.Scan(
-			&d.Id,
-			&d.Title,
-			&d.Body,
-			&d.Significance,
-			&d.PublishedAt,
-			&d.Tags,
-			&d.CreatedAt,
-			&d.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		data = append(data, d)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return data, nil
+	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Note])
 }
 
-func (s *NoteStore) createOne(
+func (s *NoteStore) CreateOne(
 	title string,
 	body string,
 	significance int,
 	publishedAt int,
 	tags []string,
 ) (int64, error) {
-	result, err := s.DB.Exec(
+	var id int64 = 0
+	err := s.DB.QueryRow(
+		context.Background(),
 		`INSERT INTO notes (
       title, body, significance, published_at, tags
     ) VALUES (
       $1, $2, $3, $4, $5
-    )`,
-		title, body, significance, publishedAt, tags)
-	if err != nil {
-		return 0, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
+    ) RETURNING id`,
+		title, body, significance, publishedAt, tags,
+	).Scan(&id)
+	return id, err
 }
 
-func (s *NoteStore) readOne(id int64) (*models.Note, error) {
-	d := &models.Note{}
-
-	err := s.DB.QueryRow(
-		`SELECT * FROM notes WHERE id = $1`, id).Scan(
-		&d.Id,
-		&d.Title,
-		&d.Body,
-		&d.Significance,
-		&d.PublishedAt,
-		&d.Tags,
-		&d.CreatedAt,
-		&d.UpdatedAt)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
-
-	return d, nil
+func (s *NoteStore) ReadOne(id int64) (models.Note, error) {
+	rows, _ := s.DB.Query(
+		context.Background(),
+		`SELECT * FROM notes WHERE id = $1`,
+		id)
+	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Note])
 }
 
-func (s *NoteStore) updateOne(
+func (s *NoteStore) UpdateOne(
 	id int64,
 	title string,
 	body string,
@@ -106,6 +63,7 @@ func (s *NoteStore) updateOne(
 	tags []string,
 ) (int64, error) {
 	result, err := s.DB.Exec(
+		context.Background(),
 		`UPDATE notes SET (
       title = $2,
       body = $3,
@@ -115,28 +73,13 @@ func (s *NoteStore) updateOne(
       updated_at = NOW()
     ) WHERE id = $1`,
 		id, title, body, significance, publishedAt, tags)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-
-	return n, nil
+	return result.RowsAffected(), err
 }
 
-func (s *NoteStore) deleteOne(id int64) (int64, error) {
-	result, err := s.DB.Exec(`DELETE FROM notes WHERE id = $1`, id)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-
-	return n, nil
+func (s *NoteStore) DeleteOne(id int64) (int64, error) {
+	result, err := s.DB.Exec(
+		context.Background(),
+		`DELETE FROM notes WHERE id = $1`,
+		id)
+	return result.RowsAffected(), err
 }

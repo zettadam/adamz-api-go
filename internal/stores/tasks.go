@@ -1,102 +1,63 @@
 package stores
 
 import (
-	"database/sql"
-	"errors"
+	"context"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/zettadam/adamz-api-go/internal/models"
 )
 
 type TaskStore struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
-func (s *TaskStore) readLatest(limit int64) ([]*models.Task, error) {
+func (s *TaskStore) ReadLatest(limit int64) ([]models.Task, error) {
 	rows, err := s.DB.Query(
-		`SELECT * FROM tasks 
-      ORDER BY created_at DESC 
+		context.Background(),
+		`SELECT * FROM tasks
+      ORDER BY created_at DESC
       LIMIT $1`,
 		limit)
 	if err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
-
-	data := []*models.Task{}
-	for rows.Next() {
-		d := &models.Task{}
-		err = rows.Scan(
-			&d.Id,
-			&d.TaskId,
-			&d.Title,
-			&d.Description,
-			&d.CreatedAt,
-			&d.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		data = append(data, d)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return data, nil
+	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Task])
 }
 
-func (s *TaskStore) createOne(
+func (s *TaskStore) CreateOne(
 	taskId int64,
 	title string,
 	description string,
 ) (int64, error) {
-	result, err := s.DB.Exec(
+	var id int64 = 0
+	err := s.DB.QueryRow(
+		context.Background(),
 		`INSERT INTO tasks (
       task_id, title, description
     ) VALUES (
       $1, $2, $3, $4, $5, $6
     )`,
-		taskId, title, description)
-	if err != nil {
-		return 0, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
+		taskId, title, description).Scan(&id)
+	return id, err
 }
 
-func (s *TaskStore) readOne(id int64) (*models.Task, error) {
-	d := &models.Task{}
-
-	err := s.DB.QueryRow(
-		`SELECT * FROM tasks WHERE id = $1`, id).Scan(
-		&d.Id,
-		&d.TaskId,
-		&d.Title,
-		&d.Description,
-		&d.CreatedAt,
-		&d.UpdatedAt)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
-
-	return d, nil
+func (s *TaskStore) ReadOne(id int64) (models.Task, error) {
+	rows, _ := s.DB.Query(
+		context.Background(),
+		`SELECT * FROM tasks WHERE id = $1`,
+		id)
+	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Task])
 }
 
-func (s *TaskStore) updateOne(
+func (s *TaskStore) UpdateOne(
 	id int64,
 	taskId int64,
 	title string,
 	description string,
 ) (int64, error) {
 	result, err := s.DB.Exec(
+		context.Background(),
 		`UPDATE tasks SET (
       task_id = $2
       title = $3,
@@ -104,28 +65,13 @@ func (s *TaskStore) updateOne(
       updated_at = NOW()
     ) WHERE id = $1`,
 		id, taskId, title, description)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-
-	return n, nil
+	return result.RowsAffected(), err
 }
 
-func (s *TaskStore) deleteOne(id int64) (int64, error) {
-	result, err := s.DB.Exec(`DELETE FROM tasks WHERE id = $1`, id)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-
-	return n, nil
+func (s *TaskStore) DeleteOne(id int64) (int64, error) {
+	result, err := s.DB.Exec(
+		context.Background(),
+		`DELETE FROM tasks WHERE id = $1`,
+		id)
+	return result.RowsAffected(), err
 }

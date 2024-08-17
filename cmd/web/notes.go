@@ -1,10 +1,11 @@
 package web
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
@@ -27,8 +28,11 @@ func NotesRouter(app *config.Application) http.Handler {
 
 func handleReadLatestNotes(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "ReadLatestNotes"
-		fmt.Fprint(w, msg)
+		data, err := app.NoteStore.ReadLatest(10)
+		if err != nil {
+			slog.Error("Error fetching notes", err)
+		}
+		json.NewEncoder(w).Encode(data)
 	}
 }
 
@@ -43,27 +47,22 @@ func handleCreateNote(app *config.Application) http.HandlerFunc {
 // Handlers in specific note context
 // ----------------------------------------------------------------------------
 
-func noteCtx(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := chi.URLParam(r, "id")
-		slog.Info("URL params", slog.Any("id", id))
-
-		if id != "" {
-			// get post by ID
-		} else {
-			fmt.Fprint(w, "Note not found")
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), "id", id)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
 func handleReadNote(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "ReadNote"
-		fmt.Fprint(w, msg)
+		_id := chi.URLParam(r, "id")
+		id, err := strconv.ParseInt(_id, 10, 64)
+		if err != nil {
+			slog.Error("Unable to convert parameter to int64", id, err)
+		}
+
+		data, err := app.NoteStore.ReadOne(id)
+		if err != nil {
+			slog.Error("Error fetching note",
+				slog.String("id", _id),
+				slog.Any("err", err),
+			)
+		}
+		json.NewEncoder(w).Encode(data)
 	}
 }
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"flag"
 	"log"
 	"log/slog"
@@ -12,6 +12,7 @@ import (
 
 	chi "github.com/go-chi/chi/v5"
 	middleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
 
@@ -119,13 +120,13 @@ func setupLogging(cfg Configuration, wd string) {
 	slog.SetDefault(l)
 }
 
-func connectDB() (*sql.DB, error) {
-	db, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
+func connectDB() (*pgxpool.Pool, error) {
+	dbPool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return nil, err
 	}
 
-	return db, nil
+	return dbPool, nil
 }
 
 func setupRouter(cfg Configuration, app *config.Application) http.Handler {

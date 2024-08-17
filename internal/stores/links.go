@@ -1,19 +1,21 @@
 package stores
 
 import (
-	"database/sql"
-	"errors"
+	"context"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/zettadam/adamz-api-go/internal/models"
 )
 
 type LinkStore struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
-func (s *LinkStore) readLatest(limit int) ([]*models.Link, error) {
+func (s *LinkStore) ReadLatest(limit int) ([]models.Link, error) {
 	rows, err := s.DB.Query(
+		context.Background(),
 		`SELECT * FROM links 
       ORDER BY published_at DESC, created_at DESC 
       LIMIT $1`,
@@ -21,34 +23,10 @@ func (s *LinkStore) readLatest(limit int) ([]*models.Link, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
-
-	data := []*models.Link{}
-	for rows.Next() {
-		d := &models.Link{}
-		err = rows.Scan(
-			&d.Id,
-			&d.Url,
-			&d.Title,
-			&d.Description,
-			&d.Significance,
-			&d.PublishedAt,
-			&d.Tags,
-			&d.CreatedAt,
-			&d.UpdatedAt)
-		if err != nil {
-			return nil, err
-		}
-		data = append(data, d)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return data, nil
+	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Link])
 }
 
-func (s *LinkStore) createOne(
+func (s *LinkStore) CreateOne(
 	url string,
 	title string,
 	description string,
@@ -56,51 +34,28 @@ func (s *LinkStore) createOne(
 	publishedAt time.Time,
 	tags []string,
 ) (int64, error) {
-	result, err := s.DB.Exec(
+	var id int64 = 0
+	err := s.DB.QueryRow(
+		context.Background(),
 		`INSERT INTO links (
       url, title, description, significance, published_at, tags
     ) VALUES (
       $1, $2, $3, $4, $5, $6
-    )`,
-		url, title, description, significance, publishedAt, tags)
-	if err != nil {
-		return 0, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
+    ) RETURNING id`,
+		url, title, description, significance, publishedAt, tags,
+	).Scan(&id)
+	return id, err
 }
 
-func (s *LinkStore) readOne(id int64) (*models.Link, error) {
-	d := &models.Link{}
-
-	err := s.DB.QueryRow(
-		`SELECT * FROM links WHERE id = $1`, id).Scan(
-		&d.Id,
-		&d.Url,
-		&d.Title,
-		&d.Description,
-		&d.Significance,
-		&d.PublishedAt,
-		&d.Tags,
-		&d.CreatedAt,
-		&d.UpdatedAt)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
-
-	return d, nil
+func (s *LinkStore) ReadOne(id int64) (models.Link, error) {
+	rows, _ := s.DB.Query(
+		context.Background(),
+		`SELECT * FROM links WHERE id = $1`,
+		id)
+	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Link])
 }
 
-func (s *LinkStore) updateOne(
+func (s *LinkStore) UpdateOne(
 	id int64,
 	url string,
 	title string,
@@ -110,6 +65,7 @@ func (s *LinkStore) updateOne(
 	tags []string,
 ) (int64, error) {
 	result, err := s.DB.Exec(
+		context.Background(),
 		`UPDATE links SET (
       url = $2
       title = $3,
@@ -119,29 +75,15 @@ func (s *LinkStore) updateOne(
       tags = $7,
       updated_at = NOW()
     ) WHERE id = $1`,
-		id, url, title, description, significance, publishedAt, tags)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-
-	return n, nil
+		id, url, title, description, significance, publishedAt, tags,
+	)
+	return result.RowsAffected(), err
 }
 
-func (s *LinkStore) deleteOne(id int64) (int64, error) {
-	result, err := s.DB.Exec(`DELETE FROM links WHERE id = $1`, id)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-
-	return n, nil
+func (s *LinkStore) DeleteOne(id int64) (int64, error) {
+	result, err := s.DB.Exec(
+		context.Background(),
+		`DELETE FROM links WHERE id = $1`,
+		id)
+	return result.RowsAffected(), err
 }

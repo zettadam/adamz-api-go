@@ -1,18 +1,20 @@
 package stores
 
 import (
-	"database/sql"
-	"errors"
+	"context"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/zettadam/adamz-api-go/internal/models"
 )
 
 type PostStore struct {
-	DB *sql.DB
+	DB *pgxpool.Pool
 }
 
-func (s *PostStore) ReadLatest(limit int) ([]*models.Post, error) {
+func (s *PostStore) ReadLatest(limit int) ([]models.Post, error) {
 	rows, err := s.DB.Query(
+		context.Background(),
 		`SELECT * FROM posts
       ORDER BY created_at DESC
       LIMIT $1`,
@@ -20,33 +22,7 @@ func (s *PostStore) ReadLatest(limit int) ([]*models.Post, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
-
-	data := []*models.Post{}
-	for rows.Next() {
-		d := &models.Post{}
-		err = rows.Scan(
-			&d.Id,
-			&d.Title,
-			&d.Slug,
-			&d.Abstract,
-			&d.Body,
-			&d.Significance,
-			&d.PublishedAt,
-			&d.Tags,
-			&d.CreatedAt,
-			&d.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		data = append(data, d)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return data, nil
+	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Post])
 }
 
 func (s *PostStore) CreateOne(
@@ -58,53 +34,29 @@ func (s *PostStore) CreateOne(
 	publishedAt int,
 	tags []string,
 ) (int64, error) {
-	result, err := s.DB.Exec(
+	var id int64 = 0
+	err := s.DB.QueryRow(
+		context.Background(),
 		`INSERT INTO posts (
       title, slug, abstract, body, significance, published_at, tags
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7
     )`,
-		title, slug, abstract, body, significance, publishedAt, tags)
-	if err != nil {
-		return 0, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return id, nil
+		title, slug, abstract, body, significance, publishedAt, tags,
+	).Scan(&id)
+	return id, err
 }
 
-func (s *PostStore) ReadOne(id int) (*models.Post, error) {
-	d := &models.Post{}
-
-	err := s.DB.QueryRow(
-		`SELECT * FROM posts WHERE id = $1`, id).Scan(
-		&d.Id,
-		&d.Title,
-		&d.Slug,
-		&d.Abstract,
-		&d.Body,
-		&d.Significance,
-		&d.PublishedAt,
-		&d.Tags,
-		&d.CreatedAt,
-		&d.UpdatedAt)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
-
-	return d, nil
+func (s *PostStore) ReadOne(id int64) (models.Post, error) {
+	rows, _ := s.DB.Query(
+		context.Background(),
+		`SELECT * FROM posts WHERE id = $1`,
+		id)
+	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Post])
 }
 
 func (s *PostStore) UpdateOne(
-	id int,
+	id int64,
 	title string,
 	slug string,
 	abstract string,
@@ -114,6 +66,7 @@ func (s *PostStore) UpdateOne(
 	tags []string,
 ) (int64, error) {
 	result, err := s.DB.Exec(
+		context.Background(),
 		`UPDATE posts SET (
       title = $2,
       slug = $3,
@@ -125,28 +78,13 @@ func (s *PostStore) UpdateOne(
       updated_at = NOW()
     ) WHERE id = $1`,
 		id, title, slug, abstract, body, significance, publishedAt, tags)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-
-	return n, nil
+	return result.RowsAffected(), err
 }
 
-func (s *PostStore) DeleteOne(id int) (int64, error) {
-	result, err := s.DB.Exec(`DELETE FROM posts WHERE id = $1`, id)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := result.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-
-	return n, nil
+func (s *PostStore) DeleteOne(id int64) (int64, error) {
+	result, err := s.DB.Exec(
+		context.Background(),
+		`DELETE FROM posts WHERE id = $1`,
+		id)
+	return result.RowsAffected(), err
 }

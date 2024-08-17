@@ -1,11 +1,11 @@
 package web
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
@@ -50,28 +50,22 @@ func handleCreatePost(app *config.Application) http.HandlerFunc {
 // Handlers in specific post context
 // ----------------------------------------------------------------------------
 
-func postCtx(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := chi.URLParam(r, "id")
-		slog.Info("URL params", slog.Any("id", id))
-
-		if id != "" {
-			// get post by ID
-		} else {
-			fmt.Fprint(w, "Post not found")
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), "id", id)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
 func handleReadPost(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.Context().Value("id")
+		_id := chi.URLParam(r, "id")
+		id, err := strconv.ParseInt(_id, 10, 64)
+		if err != nil {
+			slog.Error("Unable to convert parameter to int64", id, err)
+		}
 
-		fmt.Fprintf(w, "ReadPost (%s)", id)
+		data, err := app.PostStore.ReadOne(id)
+		if err != nil {
+			slog.Error("Error fetching post",
+				slog.String("id", _id),
+				slog.Any("err", err),
+			)
+		}
+		json.NewEncoder(w).Encode(data)
 	}
 }
 
