@@ -1,8 +1,14 @@
 package config
 
-import "log"
+import (
+	"github.com/zettadam/adamz-api-go/internal/stores"
+)
 
 type Application struct {
-	InfoLog  *log.Logger
-	ErrorLog *log.Logger
+	CodeSnippetStore *stores.CodeSnippetStore
+	EventStore       *stores.EventStore
+	LinkStore        *stores.LinkStore
+	NoteStore        *stores.NoteStore
+	PostStore        *stores.PostStore
+	TaskStore        *stores.TaskStore
 }

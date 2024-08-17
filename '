@@ -1,0 +1,13 @@
+package models
+
+import "time"
+
+type CodeSnippet struct {
+	Id          int64     `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Language    string    `json:"language"`
+	Body        string    `json:"body"`
+	PublishedAt time.Time `json:"published_at"`
+	CreatedAt   time.Time `json:"created_at"`
+}

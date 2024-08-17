@@ -7,32 +7,36 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/zettadam/adamz-api-go/internal/config"
 )
 
-func CodeSnippetsRouter() http.Handler {
+func CodeSnippetsRouter(app *config.Application) http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", handleReadLatestCodeSnippets)
-	r.Post("/", handleCreateCodeSnippet)
+	r.Get("/", handleReadLatestCodeSnippets(app))
+	r.Post("/", handleCreateCodeSnippet(app))
 
 	r.Route("/{snippetID}", func(r chi.Router) {
-		r.Use(codeSnippetCtx)
-		r.Get("/", handleReadCodeSnippet)
-		r.Put("/", handleUpdateCodeSnippet)
-		r.Delete("/", handleDeleteCodeSnippet)
+		r.Get("/", handleReadCodeSnippet(app))
+		r.Put("/", handleUpdateCodeSnippet(app))
+		r.Delete("/", handleDeleteCodeSnippet(app))
 	})
 
 	return r
 }
 
-func handleReadLatestCodeSnippets(w http.ResponseWriter, r *http.Request) {
-	msg := "CodeSnippets: ReadLatest"
-	fmt.Fprint(w, msg)
+func handleReadLatestCodeSnippets(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := "CodeSnippets: ReadLatest"
+		fmt.Fprint(w, msg)
+	}
 }
 
-func handleCreateCodeSnippet(w http.ResponseWriter, r *http.Request) {
-	msg := "CodeSnippets: CreateOne"
-	fmt.Fprint(w, msg)
+func handleCreateCodeSnippet(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := "CodeSnippets: CreateOne"
+		fmt.Fprint(w, msg)
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -56,17 +60,23 @@ func codeSnippetCtx(next http.Handler) http.Handler {
 	})
 }
 
-func handleReadCodeSnippet(w http.ResponseWriter, r *http.Request) {
-	msg := "Code Snippets: ReadOne"
-	fmt.Fprint(w, msg)
+func handleReadCodeSnippet(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := "Code Snippets: ReadOne"
+		fmt.Fprint(w, msg)
+	}
 }
 
-func handleUpdateCodeSnippet(w http.ResponseWriter, r *http.Request) {
-	msg := "CodeSnippets: UpdateOne"
-	fmt.Fprint(w, msg)
+func handleUpdateCodeSnippet(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := "CodeSnippets: UpdateOne"
+		fmt.Fprint(w, msg)
+	}
 }
 
-func handleDeleteCodeSnippet(w http.ResponseWriter, r *http.Request) {
-	msg := "CodeSnippets: DeleteOne"
-	fmt.Fprint(w, msg)
+func handleDeleteCodeSnippet(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := "CodeSnippets: DeleteOne"
+		fmt.Fprint(w, msg)
+	}
 }

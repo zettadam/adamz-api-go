@@ -7,32 +7,36 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/zettadam/adamz-api-go/internal/config"
 )
 
-func NotesRouter() http.Handler {
+func NotesRouter(app *config.Application) http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", handleReadLatestNotes)
-	r.Post("/", handleCreateNote)
+	r.Get("/", handleReadLatestNotes(app))
+	r.Post("/", handleCreateNote(app))
 
 	r.Route("/{id}", func(r chi.Router) {
-		r.Use(noteCtx)
-		r.Get("/", handleReadNote)
-		r.Put("/", handleUpdateNote)
-		r.Delete("/", handleDeleteNote)
+		r.Get("/", handleReadNote(app))
+		r.Put("/", handleUpdateNote(app))
+		r.Delete("/", handleDeleteNote(app))
 	})
 
 	return r
 }
 
-func handleReadLatestNotes(w http.ResponseWriter, r *http.Request) {
-	msg := "ReadLatestNotes"
-	fmt.Fprint(w, msg)
+func handleReadLatestNotes(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := "ReadLatestNotes"
+		fmt.Fprint(w, msg)
+	}
 }
 
-func handleCreateNote(w http.ResponseWriter, r *http.Request) {
-	msg := "CreateNote"
-	fmt.Fprint(w, msg)
+func handleCreateNote(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := "CreateNote"
+		fmt.Fprint(w, msg)
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -56,17 +60,23 @@ func noteCtx(next http.Handler) http.Handler {
 	})
 }
 
-func handleReadNote(w http.ResponseWriter, r *http.Request) {
-	msg := "ReadNote"
-	fmt.Fprint(w, msg)
+func handleReadNote(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := "ReadNote"
+		fmt.Fprint(w, msg)
+	}
 }
 
-func handleUpdateNote(w http.ResponseWriter, r *http.Request) {
-	msg := "UpdateNote"
-	fmt.Fprint(w, msg)
+func handleUpdateNote(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := "UpdateNote"
+		fmt.Fprint(w, msg)
+	}
 }
 
-func handleDeleteNote(w http.ResponseWriter, r *http.Request) {
-	msg := "DeleteNote"
-	fmt.Fprint(w, msg)
+func handleDeleteNote(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		msg := "DeleteNote"
+		fmt.Fprint(w, msg)
+	}
 }

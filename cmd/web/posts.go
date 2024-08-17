@@ -8,35 +8,42 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/zettadam/adamz-api-go/internal/config"
 	"github.com/zettadam/adamz-api-go/internal/models"
 )
 
-func PostsRouter() http.Handler {
+func PostsRouter(app *config.Application) http.Handler {
 	r := chi.NewRouter()
 
-	r.Get("/", handleReadLatestPosts)
-	r.Post("/", handleCreatePost)
+	r.Get("/", handleReadLatestPosts(app))
+	r.Post("/", handleCreatePost(app))
 
 	r.Route("/{id}", func(r chi.Router) {
-		r.Use(postCtx)
-		r.Get("/", handleReadPost)
-		r.Put("/", handleUpdatePost)
-		r.Delete("/", handleDeletePost)
+		r.Get("/", handleReadPost(app))
+		r.Put("/", handleUpdatePost(app))
+		r.Delete("/", handleDeletePost(app))
 	})
 
 	return r
 }
 
-func handleReadLatestPosts(w http.ResponseWriter, r *http.Request) {
-	msg := "ReadLatestPosts"
-	fmt.Fprint(w, msg)
+func handleReadLatestPosts(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, err := app.PostStore.ReadLatest(10)
+		if err != nil {
+			slog.Error("Error fetching latest posts", err)
+		}
+		json.NewEncoder(w).Encode(data)
+	}
 }
 
-func handleCreatePost(w http.ResponseWriter, r *http.Request) {
-	var post *models.Post
-	json.NewDecoder(r.Body).Decode(&post)
+func handleCreatePost(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var post *models.Post
+		json.NewDecoder(r.Body).Decode(&post)
 
-	fmt.Fprintf(w, "Created post %#v", post)
+		fmt.Fprintf(w, "Created post %#v", post)
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -60,20 +67,26 @@ func postCtx(next http.Handler) http.Handler {
 	})
 }
 
-func handleReadPost(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("id")
+func handleReadPost(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.Context().Value("id")
 
-	fmt.Fprintf(w, "ReadPost (%s)", id)
+		fmt.Fprintf(w, "ReadPost (%s)", id)
+	}
 }
 
-func handleUpdatePost(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("id")
+func handleUpdatePost(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.Context().Value("id")
 
-	fmt.Fprintf(w, "UpdatePost (%s)", id)
+		fmt.Fprintf(w, "UpdatePost (%s)", id)
+	}
 }
 
-func handleDeletePost(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("id")
+func handleDeletePost(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.Context().Value("id")
 
-	fmt.Fprintf(w, "DeletePost (%s)", id)
+		fmt.Fprintf(w, "DeletePost (%s)", id)
+	}
 }

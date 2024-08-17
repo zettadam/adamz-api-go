@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	"database/sql"
 	"flag"
 	"log"
 	"log/slog"
@@ -12,9 +12,12 @@ import (
 
 	chi "github.com/go-chi/chi/v5"
 	middleware "github.com/go-chi/chi/v5/middleware"
-	pgxpool "github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "github.com/joho/godotenv/autoload"
 
 	"github.com/zettadam/adamz-api-go/cmd/web"
+	"github.com/zettadam/adamz-api-go/internal/config"
+	"github.com/zettadam/adamz-api-go/internal/stores"
 )
 
 type Configuration struct {
@@ -63,15 +66,24 @@ func start() error {
 
 	// --------------------------------------------------------------------------
 	// DATABASE
-	dbpool, err := connectDB()
+	db, err := connectDB()
 	if err != nil {
 		log.Fatal("Unable to connect to database", err)
 	}
-	defer dbpool.Close()
+	defer db.Close()
+
+	app := &config.Application{
+		CodeSnippetStore: &stores.CodeSnippetStore{DB: db},
+		EventStore:       &stores.EventStore{DB: db},
+		LinkStore:        &stores.LinkStore{DB: db},
+		NoteStore:        &stores.NoteStore{DB: db},
+		PostStore:        &stores.PostStore{DB: db},
+		TaskStore:        &stores.TaskStore{DB: db},
+	}
 
 	// --------------------------------------------------------------------------
 	// ROUTING
-	r := setupRouter(cfg)
+	r := setupRouter(cfg, app)
 
 	// --------------------------------------------------------------------------
 	// SERVER
@@ -107,16 +119,16 @@ func setupLogging(cfg Configuration, wd string) {
 	slog.SetDefault(l)
 }
 
-func connectDB() (*pgxpool.Pool, error) {
-	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+func connectDB() (*sql.DB, error) {
+	db, err := sql.Open("pgx", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return nil, err
 	}
 
-	return dbpool, nil
+	return db, nil
 }
 
-func setupRouter(cfg Configuration) http.Handler {
+func setupRouter(cfg Configuration, app *config.Application) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -127,12 +139,12 @@ func setupRouter(cfg Configuration) http.Handler {
 	r.Use(middleware.Timeout(cfg.rtimeout * time.Second))
 
 	r.Get("/", web.HandleHome)
-	r.Mount("/posts", web.PostsRouter())
-	r.Mount("/notes", web.NotesRouter())
-	r.Mount("/code", web.CodeSnippetsRouter())
-	r.Mount("/links", web.LinksRouter())
-	r.Mount("/tasks", web.TasksRouter())
-	r.Mount("/calendar", web.CalendarRouter())
+	r.Mount("/posts", web.PostsRouter(app))
+	r.Mount("/notes", web.NotesRouter(app))
+	r.Mount("/code", web.CodeSnippetsRouter(app))
+	r.Mount("/links", web.LinksRouter(app))
+	r.Mount("/tasks", web.TasksRouter(app))
+	r.Mount("/calendar", web.CalendarRouter(app))
 
 	return r
 }
