@@ -1,11 +1,8 @@
 package web
 
 import (
-	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
@@ -29,10 +26,7 @@ func TasksRouter(app *config.Application) http.Handler {
 func handleReadLatestTasks(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := app.TaskStore.ReadLatest(10)
-		if err != nil {
-			slog.Error("Error fetching tasks", err)
-		}
-		json.NewEncoder(w).Encode(data)
+		WriteResponse(w, data, err)
 	}
 }
 
@@ -49,20 +43,9 @@ func handleCreateTask(app *config.Application) http.HandlerFunc {
 
 func handleReadTask(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_id := chi.URLParam(r, "id")
-		id, err := strconv.ParseInt(_id, 10, 64)
-		if err != nil {
-			slog.Error("Unable to convert parameter to int64", id, err)
-		}
-
+		id := ParseId(w, chi.URLParam(r, "id"))
 		data, err := app.TaskStore.ReadOne(id)
-		if err != nil {
-			slog.Error("Error fetching task",
-				slog.String("id", _id),
-				slog.Any("err", err),
-			)
-		}
-		json.NewEncoder(w).Encode(data)
+		WriteResponse(w, data, err)
 	}
 }
 

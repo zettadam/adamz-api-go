@@ -1,7 +1,6 @@
 package web
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -32,7 +31,7 @@ func handleReadLatestLinks(app *config.Application) http.HandlerFunc {
 		if err != nil {
 			slog.Error("Error fetching links", err)
 		}
-		json.NewEncoder(w).Encode(data)
+		WriteJSON(w, 200, data)
 	}
 }
 
@@ -62,7 +61,7 @@ func handleReadLink(app *config.Application) http.HandlerFunc {
 				slog.Any("err", err),
 			)
 		}
-		json.NewEncoder(w).Encode(data)
+		WriteJSON(w, 200, data)
 	}
 }
 

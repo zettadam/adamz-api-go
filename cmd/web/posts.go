@@ -1,16 +1,22 @@
 package web
 
 import (
-	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
-	"github.com/zettadam/adamz-api-go/internal/models"
 )
+
+type PostRequest struct {
+	Title        string   `json:"title"`
+	Slug         string   `json:"slug"`
+	Abstract     string   `json:"abstract"`
+	Significance int      `json:"significance"`
+	Body         string   `json:"body"`
+	PublishedAt  string   `json:"published_at"`
+	Tags         []string `json:"tags"`
+}
 
 func PostsRouter(app *config.Application) http.Handler {
 	r := chi.NewRouter()
@@ -30,18 +36,14 @@ func PostsRouter(app *config.Application) http.Handler {
 func handleReadLatestPosts(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := app.PostStore.ReadLatest(10)
-		if err != nil {
-			slog.Error("Error fetching latest posts", err)
-		}
-		json.NewEncoder(w).Encode(data)
+		WriteResponse(w, data, err)
 	}
 }
 
 func handleCreatePost(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var post *models.Post
-		json.NewDecoder(r.Body).Decode(&post)
-
+		var post *PostRequest
+		ReadJSONRequest(w, r, &post)
 		fmt.Fprintf(w, "Created post %#v", post)
 	}
 }
@@ -52,35 +54,22 @@ func handleCreatePost(app *config.Application) http.HandlerFunc {
 
 func handleReadPost(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_id := chi.URLParam(r, "id")
-		id, err := strconv.ParseInt(_id, 10, 64)
-		if err != nil {
-			slog.Error("Unable to convert parameter to int64", id, err)
-		}
-
+		id := ParseId(w, chi.URLParam(r, "id"))
 		data, err := app.PostStore.ReadOne(id)
-		if err != nil {
-			slog.Error("Error fetching post",
-				slog.String("id", _id),
-				slog.Any("err", err),
-			)
-		}
-		json.NewEncoder(w).Encode(data)
+		WriteResponse(w, data, err)
 	}
 }
 
 func handleUpdatePost(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.Context().Value("id")
-
+		id := ParseId(w, chi.URLParam(r, "id"))
 		fmt.Fprintf(w, "UpdatePost (%s)", id)
 	}
 }
 
 func handleDeletePost(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.Context().Value("id")
-
+		id := ParseId(w, chi.URLParam(r, "id"))
 		fmt.Fprintf(w, "DeletePost (%s)", id)
 	}
 }

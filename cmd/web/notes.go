@@ -1,7 +1,6 @@
 package web
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -32,7 +31,7 @@ func handleReadLatestNotes(app *config.Application) http.HandlerFunc {
 		if err != nil {
 			slog.Error("Error fetching notes", err)
 		}
-		json.NewEncoder(w).Encode(data)
+		WriteJSON(w, 200, data)
 	}
 }
 
@@ -62,7 +61,7 @@ func handleReadNote(app *config.Application) http.HandlerFunc {
 				slog.Any("err", err),
 			)
 		}
-		json.NewEncoder(w).Encode(data)
+		WriteJSON(w, 200, data)
 	}
 }
 
