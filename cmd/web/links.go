@@ -2,9 +2,7 @@ package web
 
 import (
 	"fmt"
-	"log/slog"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
@@ -28,10 +26,7 @@ func LinksRouter(app *config.Application) http.Handler {
 func handleReadLatestLinks(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := app.LinkStore.ReadLatest(10)
-		if err != nil {
-			slog.Error("Error fetching links", err)
-		}
-		WriteJSON(w, 200, data)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 
@@ -48,20 +43,9 @@ func handleCreateLink(app *config.Application) http.HandlerFunc {
 
 func handleReadLink(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_id := chi.URLParam(r, "id")
-		id, err := strconv.ParseInt(_id, 10, 64)
-		if err != nil {
-			slog.Error("Unable to convert parameter to int64", id, err)
-		}
-
+		id := ParseId(w, chi.URLParam(r, "id"))
 		data, err := app.LinkStore.ReadOne(id)
-		if err != nil {
-			slog.Error("Error fetching link",
-				slog.String("id", _id),
-				slog.Any("err", err),
-			)
-		}
-		WriteJSON(w, 200, data)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 
@@ -74,7 +58,8 @@ func handleUpdateLink(app *config.Application) http.HandlerFunc {
 
 func handleDeleteLink(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "DeleteLink"
-		fmt.Fprint(w, msg)
+		id := ParseId(w, chi.URLParam(r, "id"))
+		data, err := app.LinkStore.DeleteOne(id)
+		WriteJSONResponse(w, err, http.StatusNoContent, data)
 	}
 }

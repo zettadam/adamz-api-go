@@ -36,7 +36,7 @@ func PostsRouter(app *config.Application) http.Handler {
 func handleReadLatestPosts(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := app.PostStore.ReadLatest(10)
-		WriteResponse(w, data, err)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 
@@ -56,7 +56,7 @@ func handleReadPost(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := ParseId(w, chi.URLParam(r, "id"))
 		data, err := app.PostStore.ReadOne(id)
-		WriteResponse(w, data, err)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 
@@ -70,6 +70,7 @@ func handleUpdatePost(app *config.Application) http.HandlerFunc {
 func handleDeletePost(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := ParseId(w, chi.URLParam(r, "id"))
-		fmt.Fprintf(w, "DeletePost (%s)", id)
+		data, err := app.PostStore.DeleteOne(id)
+		WriteJSONResponse(w, err, http.StatusNoContent, data)
 	}
 }

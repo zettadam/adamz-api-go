@@ -41,17 +41,20 @@ func (s *PostStore) CreateOne(
       title, slug, abstract, body, significance, published_at, tags
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7
-    )`,
+    ) RETURNING id`,
 		title, slug, abstract, body, significance, publishedAt, tags,
 	).Scan(&id)
 	return id, err
 }
 
 func (s *PostStore) ReadOne(id int64) (models.Post, error) {
-	rows, _ := s.DB.Query(
+	rows, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM posts WHERE id = $1`,
 		id)
+	if err != nil {
+		return models.Post{}, err
+	}
 	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Post])
 }
 
@@ -77,7 +80,8 @@ func (s *PostStore) UpdateOne(
       tags = $8,
       updated_at = NOW()
     ) WHERE id = $1`,
-		id, title, slug, abstract, body, significance, publishedAt, tags)
+		id, title, slug, abstract, body, significance, publishedAt, tags,
+	)
 	return result.RowsAffected(), err
 }
 

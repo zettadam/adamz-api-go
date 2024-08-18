@@ -26,7 +26,7 @@ func TasksRouter(app *config.Application) http.Handler {
 func handleReadLatestTasks(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := app.TaskStore.ReadLatest(10)
-		WriteResponse(w, data, err)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 
@@ -45,7 +45,7 @@ func handleReadTask(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := ParseId(w, chi.URLParam(r, "id"))
 		data, err := app.TaskStore.ReadOne(id)
-		WriteResponse(w, data, err)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 
@@ -58,7 +58,8 @@ func handleUpdateTask(app *config.Application) http.HandlerFunc {
 
 func handleDeleteTask(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "DeleteTask"
-		fmt.Fprint(w, msg)
+		id := ParseId(w, chi.URLParam(r, "id"))
+		data, err := app.TaskStore.DeleteOne(id)
+		WriteJSONResponse(w, err, http.StatusNoContent, data)
 	}
 }
