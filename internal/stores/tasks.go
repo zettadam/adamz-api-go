@@ -13,7 +13,7 @@ type TaskStore struct {
 }
 
 func (s *TaskStore) ReadLatest(limit int64) ([]models.Task, error) {
-	rows, err := s.DB.Query(
+	result, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM tasks
       ORDER BY created_at DESC
@@ -22,32 +22,37 @@ func (s *TaskStore) ReadLatest(limit int64) ([]models.Task, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Task])
+	return pgx.CollectRows(result, pgx.RowToStructByName[models.Task])
 }
 
 func (s *TaskStore) CreateOne(
 	taskId int64,
 	title string,
 	description string,
-) (int64, error) {
-	var id int64 = 0
-	err := s.DB.QueryRow(
+) (models.Task, error) {
+	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO tasks (
       task_id, title, description
     ) VALUES (
       $1, $2, $3, $4, $5, $6
-    )`,
-		taskId, title, description).Scan(&id)
-	return id, err
+    ) RETURNING *`,
+		taskId, title, description)
+	if err != nil {
+		return models.Task{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Task])
 }
 
 func (s *TaskStore) ReadOne(id int64) (models.Task, error) {
-	rows, _ := s.DB.Query(
+	result, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM tasks WHERE id = $1`,
 		id)
-	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Task])
+	if err != nil {
+		return models.Task{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Task])
 }
 
 func (s *TaskStore) UpdateOne(
@@ -55,17 +60,21 @@ func (s *TaskStore) UpdateOne(
 	taskId int64,
 	title string,
 	description string,
-) (int64, error) {
-	result, err := s.DB.Exec(
+) (models.Task, error) {
+	result, err := s.DB.Query(
 		context.Background(),
 		`UPDATE tasks SET (
       task_id = $2
       title = $3,
       description = $4,
       updated_at = NOW()
-    ) WHERE id = $1`,
+    ) WHERE id = $1
+    RETURNING *`,
 		id, taskId, title, description)
-	return result.RowsAffected(), err
+	if err != nil {
+		return models.Task{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Task])
 }
 
 func (s *TaskStore) DeleteOne(id int64) (int64, error) {

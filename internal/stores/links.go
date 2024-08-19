@@ -33,26 +33,31 @@ func (s *LinkStore) CreateOne(
 	significance string,
 	publishedAt time.Time,
 	tags []string,
-) (int64, error) {
-	var id int64 = 0
-	err := s.DB.QueryRow(
+) (models.Link, error) {
+	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO links (
       url, title, description, significance, published_at, tags
     ) VALUES (
       $1, $2, $3, $4, $5, $6
-    ) RETURNING id`,
+    ) RETURNING *`,
 		url, title, description, significance, publishedAt, tags,
-	).Scan(&id)
-	return id, err
+	)
+	if err != nil {
+		return models.Link{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Link])
 }
 
 func (s *LinkStore) ReadOne(id int64) (models.Link, error) {
-	rows, _ := s.DB.Query(
+	result, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM links WHERE id = $1`,
 		id)
-	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Link])
+	if err != nil {
+		return models.Link{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Link])
 }
 
 func (s *LinkStore) UpdateOne(
@@ -63,8 +68,8 @@ func (s *LinkStore) UpdateOne(
 	significance int,
 	publishedAt time.Time,
 	tags []string,
-) (int64, error) {
-	result, err := s.DB.Exec(
+) (models.Link, error) {
+	result, err := s.DB.Query(
 		context.Background(),
 		`UPDATE links SET (
       url = $2
@@ -74,10 +79,14 @@ func (s *LinkStore) UpdateOne(
       published_at = $6,
       tags = $7,
       updated_at = NOW()
-    ) WHERE id = $1`,
+    ) WHERE id = $1
+    RETURNING *`,
 		id, url, title, description, significance, publishedAt, tags,
 	)
-	return result.RowsAffected(), err
+	if err != nil {
+		return models.Link{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Link])
 }
 
 func (s *LinkStore) DeleteOne(id int64) (int64, error) {

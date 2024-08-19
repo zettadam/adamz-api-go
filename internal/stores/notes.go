@@ -14,7 +14,7 @@ type NoteStore struct {
 }
 
 func (s *NoteStore) ReadLatest(limit int) ([]models.Note, error) {
-	rows, err := s.DB.Query(
+	result, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM notes
       ORDER BY published_at DESC, created_at DESC
@@ -23,7 +23,7 @@ func (s *NoteStore) ReadLatest(limit int) ([]models.Note, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Note])
+	return pgx.CollectRows(result, pgx.RowToStructByName[models.Note])
 }
 
 func (s *NoteStore) CreateOne(
@@ -32,26 +32,32 @@ func (s *NoteStore) CreateOne(
 	significance int,
 	publishedAt int,
 	tags []string,
-) (int64, error) {
-	var id int64 = 0
-	err := s.DB.QueryRow(
+) (models.Note, error) {
+	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO notes (
       title, body, significance, published_at, tags
     ) VALUES (
       $1, $2, $3, $4, $5
-    ) RETURNING id`,
+    ) RETURNING *`,
 		title, body, significance, publishedAt, tags,
-	).Scan(&id)
-	return id, err
+	)
+	if err != nil {
+		return models.Note{}, err
+	}
+
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Note])
 }
 
 func (s *NoteStore) ReadOne(id int64) (models.Note, error) {
-	rows, _ := s.DB.Query(
+	result, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM notes WHERE id = $1`,
 		id)
-	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Note])
+	if err != nil {
+		return models.Note{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Note])
 }
 
 func (s *NoteStore) UpdateOne(
@@ -61,8 +67,8 @@ func (s *NoteStore) UpdateOne(
 	significance int,
 	publishedAt time.Time,
 	tags []string,
-) (int64, error) {
-	result, err := s.DB.Exec(
+) (models.Note, error) {
+	result, err := s.DB.Query(
 		context.Background(),
 		`UPDATE notes SET (
       title = $2,
@@ -71,9 +77,13 @@ func (s *NoteStore) UpdateOne(
       published_at = $5,
       tags = $6,
       updated_at = NOW()
-    ) WHERE id = $1`,
+    ) WHERE id = $1
+    RETURNING *`,
 		id, title, body, significance, publishedAt, tags)
-	return result.RowsAffected(), err
+	if err != nil {
+		return models.Note{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Note])
 }
 
 func (s *NoteStore) DeleteOne(id int64) (int64, error) {

@@ -33,18 +33,20 @@ func (s *PostStore) CreateOne(
 	significance int,
 	publishedAt int,
 	tags []string,
-) (int64, error) {
-	var id int64 = 0
-	err := s.DB.QueryRow(
+) (models.Post, error) {
+	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO posts (
       title, slug, abstract, body, significance, published_at, tags
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7
-    ) RETURNING id`,
+    ) RETURNING *`,
 		title, slug, abstract, body, significance, publishedAt, tags,
-	).Scan(&id)
-	return id, err
+	)
+	if err != nil {
+		return models.Post{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Post])
 }
 
 func (s *PostStore) ReadOne(id int64) (models.Post, error) {
@@ -67,8 +69,8 @@ func (s *PostStore) UpdateOne(
 	significance int,
 	publishedAt int,
 	tags []string,
-) (int64, error) {
-	result, err := s.DB.Exec(
+) (models.Post, error) {
+	result, err := s.DB.Query(
 		context.Background(),
 		`UPDATE posts SET (
       title = $2,
@@ -79,10 +81,14 @@ func (s *PostStore) UpdateOne(
       published_at = $7,
       tags = $8,
       updated_at = NOW()
-    ) WHERE id = $1`,
+    ) WHERE id = $1
+    RETURNING *`,
 		id, title, slug, abstract, body, significance, publishedAt, tags,
 	)
-	return result.RowsAffected(), err
+	if err != nil {
+		return models.Post{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Post])
 }
 
 func (s *PostStore) DeleteOne(id int64) (int64, error) {

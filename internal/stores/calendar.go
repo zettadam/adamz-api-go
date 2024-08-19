@@ -31,23 +31,28 @@ func (s *EventStore) CreateOne(
 	description string,
 	startTime time.Time,
 	endTime time.Time,
-) (int64, error) {
-	var id int64 = 0
-	err := s.DB.QueryRow(context.Background(),
+) (models.Event, error) {
+	result, err := s.DB.Query(context.Background(),
 		`INSERT INTO events (
       title, description, start_time, end_time
     ) VALUES (
       $1, $2, $3, $4
-    ) RETURNING id`,
-		title, description, startTime, endTime).Scan(&id)
-	return id, err
+    ) RETURNING *`,
+		title, description, startTime, endTime)
+	if err != nil {
+		return models.Event{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Event])
 }
 
 func (s *EventStore) ReadOne(id int64) (models.Event, error) {
-	rows, _ := s.DB.Query(
+	rows, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM events WHERE id = $1`,
 		id)
+	if err != nil {
+		return models.Event{}, err
+	}
 	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Event])
 }
 
@@ -57,8 +62,9 @@ func (s *EventStore) UpdateOne(
 	description string,
 	startTime time.Time,
 	endTime time.Time,
-) (int64, error) {
-	result, err := s.DB.Exec(context.Background(),
+) (models.Event, error) {
+	result, err := s.DB.Query(
+		context.Background(),
 		`UPDATE events SET (
       title = $2,
       description = $3,
@@ -67,7 +73,10 @@ func (s *EventStore) UpdateOne(
       updated_at = NOW()
     ) WHERE id = $1`,
 		id, title, description, startTime, endTime)
-	return result.RowsAffected(), err
+	if err != nil {
+		return models.Event{}, err
+	}
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Event])
 }
 
 func (s *EventStore) DeleteOne(id int64) (int64, error) {
