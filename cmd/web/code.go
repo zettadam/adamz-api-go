@@ -1,11 +1,11 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
+	"github.com/zettadam/adamz-api-go/internal/models"
 )
 
 func CodeSnippetsRouter(app *config.Application) http.Handler {
@@ -32,8 +32,11 @@ func handleReadLatestCodeSnippets(app *config.Application) http.HandlerFunc {
 
 func handleCreateCodeSnippet(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "CodeSnippets: CreateOne"
-		fmt.Fprint(w, msg)
+		var p models.CodeSnippetRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+		data, err := app.CodeSnippetStore.CreateOne(p)
+		WriteJSONResponse(w, err, http.StatusCreated, data)
 	}
 }
 
@@ -51,8 +54,12 @@ func handleReadCodeSnippet(app *config.Application) http.HandlerFunc {
 
 func handleUpdateCodeSnippet(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "CodeSnippets: UpdateOne"
-		fmt.Fprint(w, msg)
+		id := ParseId(w, chi.URLParam(r, "id"))
+		var p models.CodeSnippetRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+		data, err := app.CodeSnippetStore.UpdateOne(id, p)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 

@@ -25,19 +25,15 @@ func (s *TaskStore) ReadLatest(limit int64) ([]models.Task, error) {
 	return pgx.CollectRows(result, pgx.RowToStructByName[models.Task])
 }
 
-func (s *TaskStore) CreateOne(
-	taskId int64,
-	title string,
-	description string,
-) (models.Task, error) {
+func (s *TaskStore) CreateOne(d models.TaskRequest) (models.Task, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO tasks (
       task_id, title, description
     ) VALUES (
-      $1, $2, $3, $4, $5, $6
+      $1, $2, $3
     ) RETURNING *`,
-		taskId, title, description)
+		d.TaskId, d.Title, d.Description)
 	if err != nil {
 		return models.Task{}, err
 	}
@@ -57,9 +53,7 @@ func (s *TaskStore) ReadOne(id int64) (models.Task, error) {
 
 func (s *TaskStore) UpdateOne(
 	id int64,
-	taskId int64,
-	title string,
-	description string,
+	d models.TaskRequest,
 ) (models.Task, error) {
 	result, err := s.DB.Query(
 		context.Background(),
@@ -70,7 +64,7 @@ func (s *TaskStore) UpdateOne(
       updated_at = NOW()
     ) WHERE id = $1
     RETURNING *`,
-		id, taskId, title, description)
+		id, d.TaskId, d.Title, d.Description)
 	if err != nil {
 		return models.Task{}, err
 	}

@@ -1,22 +1,12 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
+	"github.com/zettadam/adamz-api-go/internal/models"
 )
-
-type PostRequest struct {
-	Title        string   `json:"title"`
-	Slug         string   `json:"slug"`
-	Abstract     string   `json:"abstract"`
-	Significance int      `json:"significance"`
-	Body         string   `json:"body"`
-	PublishedAt  string   `json:"published_at"`
-	Tags         []string `json:"tags"`
-}
 
 func PostsRouter(app *config.Application) http.Handler {
 	r := chi.NewRouter()
@@ -42,9 +32,12 @@ func handleReadLatestPosts(app *config.Application) http.HandlerFunc {
 
 func handleCreatePost(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var post *PostRequest
-		ReadJSONRequest(w, r, &post)
-		fmt.Fprintf(w, "Created post %#v", post)
+		var p models.PostRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+
+		data, err := app.PostStore.CreateOne(p)
+		WriteJSONResponse(w, err, http.StatusCreated, data)
 	}
 }
 
@@ -63,7 +56,12 @@ func handleReadPost(app *config.Application) http.HandlerFunc {
 func handleUpdatePost(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := ParseId(w, chi.URLParam(r, "id"))
-		fmt.Fprintf(w, "UpdatePost (%s)", id)
+		var p models.PostRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+
+		data, err := app.PostStore.UpdateOne(id, p)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 
@@ -73,4 +71,12 @@ func handleDeletePost(app *config.Application) http.HandlerFunc {
 		data, err := app.PostStore.DeleteOne(id)
 		WriteJSONResponse(w, err, http.StatusNoContent, data)
 	}
+}
+
+// ----------------------------------------------------------------------------
+// Validation
+// ----------------------------------------------------------------------------
+
+func validatePost(input models.Post) (models.Post, error) {
+	return input, nil
 }

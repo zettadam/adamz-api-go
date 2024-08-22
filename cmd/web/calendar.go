@@ -1,11 +1,11 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
+	"github.com/zettadam/adamz-api-go/internal/models"
 )
 
 func CalendarRouter(app *config.Application) http.Handler {
@@ -32,8 +32,12 @@ func handleReadLatestEvents(app *config.Application) http.HandlerFunc {
 
 func handleCreateEvent(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "Events: CreateOne"
-		fmt.Fprint(w, msg)
+		var p models.EventRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+
+		data, err := app.EventStore.CreateOne(p)
+		WriteJSONResponse(w, err, http.StatusCreated, data)
 	}
 }
 
@@ -51,8 +55,13 @@ func handleReadEvent(app *config.Application) http.HandlerFunc {
 
 func handleUpdateEvent(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "Events: UpdateOne"
-		fmt.Fprint(w, msg)
+		id := ParseId(w, chi.URLParam(r, "id"))
+		var p models.EventRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+
+		data, err := app.EventStore.UpdateOne(id, p)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 

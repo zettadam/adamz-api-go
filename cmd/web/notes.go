@@ -1,11 +1,11 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
+	"github.com/zettadam/adamz-api-go/internal/models"
 )
 
 func NotesRouter(app *config.Application) http.Handler {
@@ -32,8 +32,12 @@ func handleReadLatestNotes(app *config.Application) http.HandlerFunc {
 
 func handleCreateNote(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "CreateNote"
-		fmt.Fprint(w, msg)
+		var p models.NoteRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+
+		data, err := app.NoteStore.CreateOne(p)
+		WriteJSONResponse(w, err, http.StatusCreated, data)
 	}
 }
 
@@ -51,8 +55,13 @@ func handleReadNote(app *config.Application) http.HandlerFunc {
 
 func handleUpdateNote(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "UpdateNote"
-		fmt.Fprint(w, msg)
+		id := ParseId(w, chi.URLParam(r, "id"))
+		var p models.NoteRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+
+		data, err := app.NoteStore.UpdateOne(id, p)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 

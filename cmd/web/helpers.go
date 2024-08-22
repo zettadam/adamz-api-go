@@ -35,8 +35,8 @@ func ParseId(w http.ResponseWriter, input string) int64 {
 	return id
 }
 
-func ReadJSONRequest(w http.ResponseWriter, r *http.Request, data any) {
-	err := json.NewDecoder(r.Body).Decode(&data)
+func ReadJSONRequest(w http.ResponseWriter, r *http.Request, dest any) {
+	err := json.NewDecoder(r.Body).Decode(&dest)
 	if err != nil {
 		msg := "Bad request"
 		slog.Error(msg, slog.String("err", err.Error()))
@@ -44,8 +44,8 @@ func ReadJSONRequest(w http.ResponseWriter, r *http.Request, data any) {
 			Status: http.StatusBadRequest,
 			Detail: "Invalid JSON request body",
 		})
-		return
 	}
+	return
 }
 
 func WriteJSONResponse(w http.ResponseWriter, err error, statusCode int, data any) {
@@ -56,6 +56,7 @@ func WriteJSONResponse(w http.ResponseWriter, err error, statusCode int, data an
 		})
 		return
 	}
+
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {

@@ -2,7 +2,6 @@ package stores
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -26,19 +25,14 @@ func (s *EventStore) ReadLatest(limit int) ([]models.Event, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Event])
 }
 
-func (s *EventStore) CreateOne(
-	title string,
-	description string,
-	startTime time.Time,
-	endTime time.Time,
-) (models.Event, error) {
+func (s *EventStore) CreateOne(d models.EventRequest) (models.Event, error) {
 	result, err := s.DB.Query(context.Background(),
 		`INSERT INTO events (
       title, description, start_time, end_time
     ) VALUES (
       $1, $2, $3, $4
     ) RETURNING *`,
-		title, description, startTime, endTime)
+		d.Title, d.Description, d.StartTime, d.EndTime)
 	if err != nil {
 		return models.Event{}, err
 	}
@@ -58,10 +52,7 @@ func (s *EventStore) ReadOne(id int64) (models.Event, error) {
 
 func (s *EventStore) UpdateOne(
 	id int64,
-	title string,
-	description string,
-	startTime time.Time,
-	endTime time.Time,
+	d models.EventRequest,
 ) (models.Event, error) {
 	result, err := s.DB.Query(
 		context.Background(),
@@ -72,7 +63,12 @@ func (s *EventStore) UpdateOne(
       end_time = $5,
       updated_at = NOW()
     ) WHERE id = $1`,
-		id, title, description, startTime, endTime)
+		id,
+		d.Title,
+		d.Description,
+		d.StartTime,
+		d.EndTime,
+	)
 	if err != nil {
 		return models.Event{}, err
 	}

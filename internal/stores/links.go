@@ -2,7 +2,6 @@ package stores
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -26,14 +25,7 @@ func (s *LinkStore) ReadLatest(limit int) ([]models.Link, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Link])
 }
 
-func (s *LinkStore) CreateOne(
-	url string,
-	title string,
-	description string,
-	significance string,
-	publishedAt time.Time,
-	tags []string,
-) (models.Link, error) {
+func (s *LinkStore) CreateOne(d models.LinkRequest) (models.Link, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO links (
@@ -41,7 +33,7 @@ func (s *LinkStore) CreateOne(
     ) VALUES (
       $1, $2, $3, $4, $5, $6
     ) RETURNING *`,
-		url, title, description, significance, publishedAt, tags,
+		d.Url, d.Title, d.Description, d.Significance, d.PublishedAt, d.Tags,
 	)
 	if err != nil {
 		return models.Link{}, err
@@ -62,12 +54,7 @@ func (s *LinkStore) ReadOne(id int64) (models.Link, error) {
 
 func (s *LinkStore) UpdateOne(
 	id int64,
-	url string,
-	title string,
-	description string,
-	significance int,
-	publishedAt time.Time,
-	tags []string,
+	d models.LinkRequest,
 ) (models.Link, error) {
 	result, err := s.DB.Query(
 		context.Background(),
@@ -81,7 +68,13 @@ func (s *LinkStore) UpdateOne(
       updated_at = NOW()
     ) WHERE id = $1
     RETURNING *`,
-		id, url, title, description, significance, publishedAt, tags,
+		id,
+		d.Url,
+		d.Title,
+		d.Description,
+		d.Significance,
+		d.PublishedAt,
+		d.Tags,
 	)
 	if err != nil {
 		return models.Link{}, err

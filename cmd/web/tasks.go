@@ -1,11 +1,11 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
+	"github.com/zettadam/adamz-api-go/internal/models"
 )
 
 func TasksRouter(app *config.Application) http.Handler {
@@ -32,8 +32,12 @@ func handleReadLatestTasks(app *config.Application) http.HandlerFunc {
 
 func handleCreateTask(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "CreateTask"
-		fmt.Fprint(w, msg)
+		var p models.TaskRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+
+		data, err := app.TaskStore.CreateOne(p)
+		WriteJSONResponse(w, err, http.StatusCreated, data)
 	}
 }
 
@@ -44,6 +48,7 @@ func handleCreateTask(app *config.Application) http.HandlerFunc {
 func handleReadTask(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := ParseId(w, chi.URLParam(r, "id"))
+
 		data, err := app.TaskStore.ReadOne(id)
 		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
@@ -51,14 +56,21 @@ func handleReadTask(app *config.Application) http.HandlerFunc {
 
 func handleUpdateTask(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "UpdateTask"
-		fmt.Fprint(w, msg)
+		id := ParseId(w, chi.URLParam(r, "id"))
+
+		var p models.TaskRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+
+		data, err := app.TaskStore.UpdateOne(id, p)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 
 func handleDeleteTask(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := ParseId(w, chi.URLParam(r, "id"))
+
 		data, err := app.TaskStore.DeleteOne(id)
 		WriteJSONResponse(w, err, http.StatusNoContent, data)
 	}

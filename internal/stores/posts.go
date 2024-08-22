@@ -25,15 +25,7 @@ func (s *PostStore) ReadLatest(limit int) ([]models.Post, error) {
 	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Post])
 }
 
-func (s *PostStore) CreateOne(
-	title string,
-	slug string,
-	abstract string,
-	body string,
-	significance int,
-	publishedAt int,
-	tags []string,
-) (models.Post, error) {
+func (s *PostStore) CreateOne(d models.PostRequest) (models.Post, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO posts (
@@ -41,7 +33,7 @@ func (s *PostStore) CreateOne(
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7
     ) RETURNING *`,
-		title, slug, abstract, body, significance, publishedAt, tags,
+		d.Title, d.Slug, d.Abstract, d.Body, d.Significance, d.PublishedAt, d.Tags,
 	)
 	if err != nil {
 		return models.Post{}, err
@@ -62,13 +54,7 @@ func (s *PostStore) ReadOne(id int64) (models.Post, error) {
 
 func (s *PostStore) UpdateOne(
 	id int64,
-	title string,
-	slug string,
-	abstract string,
-	body string,
-	significance int,
-	publishedAt int,
-	tags []string,
+	d models.PostRequest,
 ) (models.Post, error) {
 	result, err := s.DB.Query(
 		context.Background(),
@@ -83,7 +69,14 @@ func (s *PostStore) UpdateOne(
       updated_at = NOW()
     ) WHERE id = $1
     RETURNING *`,
-		id, title, slug, abstract, body, significance, publishedAt, tags,
+		id,
+		d.Title,
+		d.Slug,
+		d.Abstract,
+		d.Body,
+		d.Significance,
+		d.PublishedAt,
+		d.Tags,
 	)
 	if err != nil {
 		return models.Post{}, err

@@ -2,7 +2,6 @@ package stores
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,12 +26,7 @@ func (s *CodeSnippetStore) ReadLatest(limit int) ([]models.CodeSnippet, error) {
 }
 
 func (s *CodeSnippetStore) CreateOne(
-	title string,
-	description string,
-	language string,
-	body string,
-	publishedAt time.Time,
-	tags []string,
+	d models.CodeSnippetRequest,
 ) (models.CodeSnippet, error) {
 	result, err := s.DB.Query(
 		context.Background(),
@@ -41,7 +35,7 @@ func (s *CodeSnippetStore) CreateOne(
     ) VALUES (
       $1, $2, $3, $4, $5, $6
     ) RETURNING *`,
-		title, description, language, body, publishedAt, tags,
+		d.Title, d.Description, d.Language, d.Body, d.PublishedAt, d.Tags,
 	)
 	if err != nil {
 		return models.CodeSnippet{}, err
@@ -63,12 +57,7 @@ func (s *CodeSnippetStore) ReadOne(id int64) (models.CodeSnippet, error) {
 
 func (s *CodeSnippetStore) UpdateOne(
 	id int64,
-	title string,
-	description string,
-	language string,
-	body string,
-	publishedAt string,
-	tags []string,
+	d models.CodeSnippetRequest,
 ) (models.CodeSnippet, error) {
 	result, err := s.DB.Query(
 		context.Background(),
@@ -82,7 +71,14 @@ func (s *CodeSnippetStore) UpdateOne(
       updated_at = NOW()
     ) WHERE id = $1
     RETURNING *`,
-		id, title, description, language, body, publishedAt, tags)
+		id,
+		d.Title,
+		d.Description,
+		d.Language,
+		d.Body,
+		d.PublishedAt,
+		d.Tags,
+	)
 	if err != nil {
 		return models.CodeSnippet{}, err
 	}

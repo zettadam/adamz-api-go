@@ -1,11 +1,11 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zettadam/adamz-api-go/internal/config"
+	"github.com/zettadam/adamz-api-go/internal/models"
 )
 
 func LinksRouter(app *config.Application) http.Handler {
@@ -32,8 +32,12 @@ func handleReadLatestLinks(app *config.Application) http.HandlerFunc {
 
 func handleCreateLink(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "CreateLink"
-		fmt.Fprint(w, msg)
+		var p models.LinkRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+
+		data, err := app.LinkStore.CreateOne(p)
+		WriteJSONResponse(w, err, http.StatusCreated, data)
 	}
 }
 
@@ -51,8 +55,13 @@ func handleReadLink(app *config.Application) http.HandlerFunc {
 
 func handleUpdateLink(app *config.Application) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		msg := "UpdateLink"
-		fmt.Fprint(w, msg)
+		id := ParseId(w, chi.URLParam(r, "id"))
+		var p models.LinkRequest
+		ReadJSONRequest(w, r, &p)
+		// TODO: Validate payload
+
+		data, err := app.LinkStore.UpdateOne(id, p)
+		WriteJSONResponse(w, err, http.StatusOK, data)
 	}
 }
 

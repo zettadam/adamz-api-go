@@ -12,10 +12,10 @@ type JSONResponse struct {
 
 type JSONError struct {
 	Status int      `json:"status"`
-	Code   string   `json:"code omitable"`
-	Title  string   `json:"title omitable"`
-	Detail string   `json:"detail omitable"`
-	Meta   struct{} `json:"meta omitable"`
+	Code   string   `json:"code,omitempty"`
+	Title  string   `json:"title,omitempty"`
+	Detail string   `json:"detail,omitempty"`
+	Meta   struct{} `json:"meta,omitempty"`
 }
 
 func HandleHome(w http.ResponseWriter, r *http.Request) {

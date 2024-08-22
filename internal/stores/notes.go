@@ -2,7 +2,6 @@ package stores
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -26,13 +25,7 @@ func (s *NoteStore) ReadLatest(limit int) ([]models.Note, error) {
 	return pgx.CollectRows(result, pgx.RowToStructByName[models.Note])
 }
 
-func (s *NoteStore) CreateOne(
-	title string,
-	body string,
-	significance int,
-	publishedAt int,
-	tags []string,
-) (models.Note, error) {
+func (s *NoteStore) CreateOne(d models.NoteRequest) (models.Note, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO notes (
@@ -40,7 +33,7 @@ func (s *NoteStore) CreateOne(
     ) VALUES (
       $1, $2, $3, $4, $5
     ) RETURNING *`,
-		title, body, significance, publishedAt, tags,
+		d.Title, d.Body, d.Significance, d.PublishedAt, d.Tags,
 	)
 	if err != nil {
 		return models.Note{}, err
@@ -62,11 +55,7 @@ func (s *NoteStore) ReadOne(id int64) (models.Note, error) {
 
 func (s *NoteStore) UpdateOne(
 	id int64,
-	title string,
-	body string,
-	significance int,
-	publishedAt time.Time,
-	tags []string,
+	d models.NoteRequest,
 ) (models.Note, error) {
 	result, err := s.DB.Query(
 		context.Background(),
@@ -79,7 +68,13 @@ func (s *NoteStore) UpdateOne(
       updated_at = NOW()
     ) WHERE id = $1
     RETURNING *`,
-		id, title, body, significance, publishedAt, tags)
+		id,
+		d.Title,
+		d.Body,
+		d.Significance,
+		d.PublishedAt,
+		d.Tags,
+	)
 	if err != nil {
 		return models.Note{}, err
 	}
