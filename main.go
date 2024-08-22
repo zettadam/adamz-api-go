@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	chi "github.com/go-chi/chi/v5"
-	middleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
@@ -21,81 +19,27 @@ import (
 	"github.com/zettadam/adamz-api-go/internal/stores"
 )
 
-type Configuration struct {
-	addr     string
-	logLevel string
-	rtimeout time.Duration
-	wtimeout time.Duration
-}
-
-func (c Configuration) LogValue() slog.Value {
-	return slog.GroupValue(
-		slog.String("addr", c.addr),
-		slog.String("logLevel", c.logLevel),
-		slog.Any("rtimeout", c.rtimeout),
-		slog.Any("wtimeout", c.wtimeout),
-	)
-}
-
 func main() {
-	err := start()
-	if err != nil {
-		log.Fatal("Error starting server", err)
-	}
-}
-
-func start() error {
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatal("Unable to determine working directory", err)
 	}
 
-	var cfg Configuration
+	var cfg config.Configuration
 
 	// --------------------------------------------------------------------------
 	// CLI FLAGS -> CONFIGURATION
+	// --------------------------------------------------------------------------
 
-	flag.StringVar(&cfg.addr, "addr", ":3000", "HTTP network address")
-	flag.StringVar(&cfg.logLevel, "logLevel", slog.LevelError.String(), "Logging level: INFO, WARN, ERROR, DEBUG")
-	flag.DurationVar(&cfg.rtimeout, "rtimeout", 5*time.Second, "Read timeout (in seconds)")
-	flag.DurationVar(&cfg.wtimeout, "wtimeout", 5*time.Second, "Write timeout (in seconds)")
+	flag.StringVar(&cfg.Addr, "addr", ":3000", "HTTP network address")
+	flag.StringVar(&cfg.LogLevel, "logLevel", slog.LevelError.String(), "Logging level: INFO, WARN, ERROR, DEBUG")
+	flag.DurationVar(&cfg.ReadTimeout, "rtimeout", 5*time.Second, "Read timeout (in seconds)")
+	flag.DurationVar(&cfg.WriteTimeout, "wtimeout", 5*time.Second, "Write timeout (in seconds)")
 	flag.Parse()
 
 	// --------------------------------------------------------------------------
 	// LOGGING
-	setupLogging(cfg, wd)
-
 	// --------------------------------------------------------------------------
-	// DATABASE
-	db, err := connectDB()
-	if err != nil {
-		log.Fatal("Unable to connect to database", err)
-	}
-	defer db.Close()
-
-	app := &config.Application{
-		CodeSnippetStore: &stores.CodeSnippetStore{DB: db},
-		EventStore:       &stores.EventStore{DB: db},
-		LinkStore:        &stores.LinkStore{DB: db},
-		NoteStore:        &stores.NoteStore{DB: db},
-		PostStore:        &stores.PostStore{DB: db},
-		TaskStore:        &stores.TaskStore{DB: db},
-	}
-
-	// --------------------------------------------------------------------------
-	// ROUTING
-	r := setupRouter(cfg, app)
-
-	// --------------------------------------------------------------------------
-	// SERVER
-	server := setupServer(cfg, r)
-
-	// GO!
-	slog.Info("Server is listening", slog.String("addr", cfg.addr))
-	return server.ListenAndServe()
-}
-
-func setupLogging(cfg Configuration, wd string) {
 	lvl := new(slog.LevelVar)
 	opts := &slog.HandlerOptions{
 		Level: lvl,
@@ -110,7 +54,7 @@ func setupLogging(cfg Configuration, wd string) {
 		},
 	}
 
-	if cfg.logLevel == "DEBUG" {
+	if cfg.LogLevel == "DEBUG" {
 		lvl.Set(slog.LevelDebug)
 		opts.AddSource = true
 	}
@@ -118,47 +62,47 @@ func setupLogging(cfg Configuration, wd string) {
 	l := slog.New(slog.NewTextHandler(os.Stderr, opts))
 
 	slog.SetDefault(l)
-}
 
-func connectDB() (*pgxpool.Pool, error) {
+	// --------------------------------------------------------------------------
+	// DATABASE
+	// --------------------------------------------------------------------------
+
 	dbPool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
-		return nil, err
+		log.Fatal("Unable to connect to database", err)
+	}
+	defer dbPool.Close()
+
+	app := &web.Application{
+		Service: &web.Service{
+			CodeSnippets: &stores.CodeSnippetStore{DB: dbPool},
+			Events:       &stores.EventStore{DB: dbPool},
+			Links:        &stores.LinkStore{DB: dbPool},
+			Notes:        &stores.NoteStore{DB: dbPool},
+			Posts:        &stores.PostStore{DB: dbPool},
+			Tasks:        &stores.TaskStore{DB: dbPool},
+		},
 	}
 
-	return dbPool, nil
-}
-
-func setupRouter(cfg Configuration, app *config.Application) http.Handler {
-	r := chi.NewRouter()
-
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-
-	r.Use(middleware.Timeout(cfg.rtimeout * time.Second))
-
-	r.Get("/", web.HandleHome)
-	r.Mount("/posts", web.PostsRouter(app))
-	r.Mount("/notes", web.NotesRouter(app))
-	r.Mount("/code", web.CodeSnippetsRouter(app))
-	r.Mount("/links", web.LinksRouter(app))
-	r.Mount("/tasks", web.TasksRouter(app))
-	r.Mount("/calendar", web.CalendarRouter(app))
-
-	return r
-}
-
-func setupServer(cfg Configuration, handler http.Handler) *http.Server {
+	// --------------------------------------------------------------------------
+	// SERVER
 	server := &http.Server{
-		Addr:         cfg.addr,
-		Handler:      handler,
-		ReadTimeout:  cfg.rtimeout * time.Second,
-		WriteTimeout: cfg.wtimeout * time.Second,
+		Addr:         cfg.Addr,
+		Handler:      app.SetupRouter(),
+		ReadTimeout:  cfg.ReadTimeout * time.Second,
+		WriteTimeout: cfg.WriteTimeout * time.Second,
 	}
 
-	slog.Info("Server created with configuration", slog.Any("cfg", cfg))
+	slog.Info(
+		"Server created with configuration",
+		slog.Any("cfg", cfg),
+	)
 
-	return server
+	// GO!
+	slog.Info(
+		"Server is listening",
+		slog.String("addr", cfg.Addr),
+	)
+
+	server.ListenAndServe()
 }

@@ -5,14 +5,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/zettadam/adamz-api-go/internal/models"
+	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
 type NoteStore struct {
 	DB *pgxpool.Pool
 }
 
-func (s *NoteStore) ReadLatest(limit int) ([]models.Note, error) {
+func (s *NoteStore) ReadLatest(limit int) ([]types.Note, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM notes
@@ -22,10 +22,10 @@ func (s *NoteStore) ReadLatest(limit int) ([]models.Note, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows(result, pgx.RowToStructByName[models.Note])
+	return pgx.CollectRows(result, pgx.RowToStructByName[types.Note])
 }
 
-func (s *NoteStore) CreateOne(d models.NoteRequest) (models.Note, error) {
+func (s *NoteStore) CreateOne(d types.NoteRequest) (types.Note, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO notes (
@@ -36,27 +36,27 @@ func (s *NoteStore) CreateOne(d models.NoteRequest) (models.Note, error) {
 		d.Title, d.Body, d.Significance, d.PublishedAt, d.Tags,
 	)
 	if err != nil {
-		return models.Note{}, err
+		return types.Note{}, err
 	}
 
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Note])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.Note])
 }
 
-func (s *NoteStore) ReadOne(id int64) (models.Note, error) {
+func (s *NoteStore) ReadOne(id int64) (types.Note, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM notes WHERE id = $1`,
 		id)
 	if err != nil {
-		return models.Note{}, err
+		return types.Note{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Note])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.Note])
 }
 
 func (s *NoteStore) UpdateOne(
 	id int64,
-	d models.NoteRequest,
-) (models.Note, error) {
+	d types.NoteRequest,
+) (types.Note, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`UPDATE notes SET (
@@ -76,9 +76,9 @@ func (s *NoteStore) UpdateOne(
 		d.Tags,
 	)
 	if err != nil {
-		return models.Note{}, err
+		return types.Note{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Note])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.Note])
 }
 
 func (s *NoteStore) DeleteOne(id int64) (int64, error) {

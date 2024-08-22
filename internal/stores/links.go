@@ -5,14 +5,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/zettadam/adamz-api-go/internal/models"
+	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
 type LinkStore struct {
 	DB *pgxpool.Pool
 }
 
-func (s *LinkStore) ReadLatest(limit int) ([]models.Link, error) {
+func (s *LinkStore) ReadLatest(limit int) ([]types.Link, error) {
 	rows, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM links 
@@ -22,10 +22,10 @@ func (s *LinkStore) ReadLatest(limit int) ([]models.Link, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Link])
+	return pgx.CollectRows(rows, pgx.RowToStructByName[types.Link])
 }
 
-func (s *LinkStore) CreateOne(d models.LinkRequest) (models.Link, error) {
+func (s *LinkStore) CreateOne(d types.LinkRequest) (types.Link, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO links (
@@ -36,26 +36,26 @@ func (s *LinkStore) CreateOne(d models.LinkRequest) (models.Link, error) {
 		d.Url, d.Title, d.Description, d.Significance, d.PublishedAt, d.Tags,
 	)
 	if err != nil {
-		return models.Link{}, err
+		return types.Link{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Link])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.Link])
 }
 
-func (s *LinkStore) ReadOne(id int64) (models.Link, error) {
+func (s *LinkStore) ReadOne(id int64) (types.Link, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM links WHERE id = $1`,
 		id)
 	if err != nil {
-		return models.Link{}, err
+		return types.Link{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Link])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.Link])
 }
 
 func (s *LinkStore) UpdateOne(
 	id int64,
-	d models.LinkRequest,
-) (models.Link, error) {
+	d types.LinkRequest,
+) (types.Link, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`UPDATE links SET (
@@ -77,9 +77,9 @@ func (s *LinkStore) UpdateOne(
 		d.Tags,
 	)
 	if err != nil {
-		return models.Link{}, err
+		return types.Link{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Link])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.Link])
 }
 
 func (s *LinkStore) DeleteOne(id int64) (int64, error) {

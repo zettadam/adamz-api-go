@@ -3,7 +3,6 @@ package web
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -12,14 +11,17 @@ import (
 	"github.com/zettadam/adamz-api-go/internal/stores"
 )
 
-type ApiError struct {
-	Status  int               `json:"status"`
-	Message string            `json:"message"`
-	Errors  map[string]string `json:"errors"`
+type JSONResponse struct {
+	Status string `json:"status"`
+	Data   any    `json:"data"`
 }
 
-func (e ApiError) Error() string {
-	return fmt.Sprintf("API error: %d", e.Status)
+type JSONError struct {
+	Status int      `json:"status"`
+	Code   string   `json:"code,omitempty"`
+	Title  string   `json:"title,omitempty"`
+	Detail string   `json:"detail,omitempty"`
+	Meta   struct{} `json:"meta,omitempty"`
 }
 
 func ParseId(w http.ResponseWriter, input string) int64 {

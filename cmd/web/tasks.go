@@ -4,74 +4,48 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/zettadam/adamz-api-go/internal/config"
-	"github.com/zettadam/adamz-api-go/internal/models"
+	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
-func TasksRouter(app *config.Application) http.Handler {
-	r := chi.NewRouter()
-
-	r.Get("/", handleReadLatestTasks(app))
-	r.Post("/", handleCreateTask(app))
-
-	r.Route("/{id}", func(r chi.Router) {
-		r.Get("/", handleReadTask(app))
-		r.Put("/", handleUpdateTask(app))
-		r.Delete("/", handleDeleteTask(app))
-	})
-
-	return r
+func (app *Application) handleReadLatestTasks(w http.ResponseWriter, r *http.Request) {
+	data, err := app.Service.Tasks.ReadLatest(10)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleReadLatestTasks(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := app.TaskStore.ReadLatest(10)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
-}
+func (app *Application) handleCreateTask(w http.ResponseWriter, r *http.Request) {
+	var p types.TaskRequest
+	ReadJSONRequest(w, r, &p)
+	// TODO: Validate payload
 
-func handleCreateTask(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var p models.TaskRequest
-		ReadJSONRequest(w, r, &p)
-		// TODO: Validate payload
-
-		data, err := app.TaskStore.CreateOne(p)
-		WriteJSONResponse(w, err, http.StatusCreated, data)
-	}
+	data, err := app.Service.Tasks.CreateOne(p)
+	WriteJSONResponse(w, err, http.StatusCreated, data)
 }
 
 // ----------------------------------------------------------------------------
 // Handlers in specific task context
 // ----------------------------------------------------------------------------
 
-func handleReadTask(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
+func (app *Application) handleReadTask(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
 
-		data, err := app.TaskStore.ReadOne(id)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
+	data, err := app.Service.Tasks.ReadOne(id)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleUpdateTask(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
+func (app *Application) handleUpdateTask(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
 
-		var p models.TaskRequest
-		ReadJSONRequest(w, r, &p)
-		// TODO: Validate payload
+	var p types.TaskRequest
+	ReadJSONRequest(w, r, &p)
+	// TODO: Validate payload
 
-		data, err := app.TaskStore.UpdateOne(id, p)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
+	data, err := app.Service.Tasks.UpdateOne(id, p)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleDeleteTask(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
+func (app *Application) handleDeleteTask(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
 
-		data, err := app.TaskStore.DeleteOne(id)
-		WriteJSONResponse(w, err, http.StatusNoContent, data)
-	}
+	data, err := app.Service.Tasks.DeleteOne(id)
+	WriteJSONResponse(w, err, http.StatusNoContent, data)
 }

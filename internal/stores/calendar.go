@@ -5,14 +5,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/zettadam/adamz-api-go/internal/models"
+	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
 type EventStore struct {
 	DB *pgxpool.Pool
 }
 
-func (s *EventStore) ReadLatest(limit int) ([]models.Event, error) {
+func (s *EventStore) ReadLatest(limit int) ([]types.Event, error) {
 	rows, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM events
@@ -22,10 +22,10 @@ func (s *EventStore) ReadLatest(limit int) ([]models.Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Event])
+	return pgx.CollectRows(rows, pgx.RowToStructByName[types.Event])
 }
 
-func (s *EventStore) CreateOne(d models.EventRequest) (models.Event, error) {
+func (s *EventStore) CreateOne(d types.EventRequest) (types.Event, error) {
 	result, err := s.DB.Query(context.Background(),
 		`INSERT INTO events (
       title, description, start_time, end_time
@@ -34,26 +34,26 @@ func (s *EventStore) CreateOne(d models.EventRequest) (models.Event, error) {
     ) RETURNING *`,
 		d.Title, d.Description, d.StartTime, d.EndTime)
 	if err != nil {
-		return models.Event{}, err
+		return types.Event{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Event])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.Event])
 }
 
-func (s *EventStore) ReadOne(id int64) (models.Event, error) {
+func (s *EventStore) ReadOne(id int64) (types.Event, error) {
 	rows, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM events WHERE id = $1`,
 		id)
 	if err != nil {
-		return models.Event{}, err
+		return types.Event{}, err
 	}
-	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Event])
+	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[types.Event])
 }
 
 func (s *EventStore) UpdateOne(
 	id int64,
-	d models.EventRequest,
-) (models.Event, error) {
+	d types.EventRequest,
+) (types.Event, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`UPDATE events SET (
@@ -70,9 +70,9 @@ func (s *EventStore) UpdateOne(
 		d.EndTime,
 	)
 	if err != nil {
-		return models.Event{}, err
+		return types.Event{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Event])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.Event])
 }
 
 func (s *EventStore) DeleteOne(id int64) (int64, error) {

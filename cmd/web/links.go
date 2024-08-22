@@ -4,71 +4,45 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/zettadam/adamz-api-go/internal/config"
-	"github.com/zettadam/adamz-api-go/internal/models"
+	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
-func LinksRouter(app *config.Application) http.Handler {
-	r := chi.NewRouter()
-
-	r.Get("/", handleReadLatestLinks(app))
-	r.Post("/", handleCreateLink(app))
-
-	r.Route("/{id}", func(r chi.Router) {
-		r.Get("/", handleReadLink(app))
-		r.Put("/", handleUpdateLink(app))
-		r.Delete("/", handleDeleteLink(app))
-	})
-
-	return r
+func (app *Application) handleReadLatestLinks(w http.ResponseWriter, r *http.Request) {
+	data, err := app.Service.Links.ReadLatest(10)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleReadLatestLinks(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := app.LinkStore.ReadLatest(10)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
-}
+func (app *Application) handleCreateLink(w http.ResponseWriter, r *http.Request) {
+	var p types.LinkRequest
+	ReadJSONRequest(w, r, &p)
+	// TODO: Validate payload
 
-func handleCreateLink(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var p models.LinkRequest
-		ReadJSONRequest(w, r, &p)
-		// TODO: Validate payload
-
-		data, err := app.LinkStore.CreateOne(p)
-		WriteJSONResponse(w, err, http.StatusCreated, data)
-	}
+	data, err := app.Service.Links.CreateOne(p)
+	WriteJSONResponse(w, err, http.StatusCreated, data)
 }
 
 // ----------------------------------------------------------------------------
 // Handlers in specific link context
 // ----------------------------------------------------------------------------
 
-func handleReadLink(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
-		data, err := app.LinkStore.ReadOne(id)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
+func (app *Application) handleReadLink(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
+	data, err := app.Service.Links.ReadOne(id)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleUpdateLink(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
-		var p models.LinkRequest
-		ReadJSONRequest(w, r, &p)
-		// TODO: Validate payload
+func (app *Application) handleUpdateLink(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
+	var p types.LinkRequest
+	ReadJSONRequest(w, r, &p)
+	// TODO: Validate payload
 
-		data, err := app.LinkStore.UpdateOne(id, p)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
+	data, err := app.Service.Links.UpdateOne(id, p)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleDeleteLink(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
-		data, err := app.LinkStore.DeleteOne(id)
-		WriteJSONResponse(w, err, http.StatusNoContent, data)
-	}
+func (app *Application) handleDeleteLink(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
+	data, err := app.Service.Links.DeleteOne(id)
+	WriteJSONResponse(w, err, http.StatusNoContent, data)
 }

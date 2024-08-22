@@ -4,71 +4,45 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/zettadam/adamz-api-go/internal/config"
-	"github.com/zettadam/adamz-api-go/internal/models"
+	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
-func NotesRouter(app *config.Application) http.Handler {
-	r := chi.NewRouter()
-
-	r.Get("/", handleReadLatestNotes(app))
-	r.Post("/", handleCreateNote(app))
-
-	r.Route("/{id}", func(r chi.Router) {
-		r.Get("/", handleReadNote(app))
-		r.Put("/", handleUpdateNote(app))
-		r.Delete("/", handleDeleteNote(app))
-	})
-
-	return r
+func (app *Application) handleReadLatestNotes(w http.ResponseWriter, r *http.Request) {
+	data, err := app.Service.Notes.ReadLatest(10)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleReadLatestNotes(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := app.NoteStore.ReadLatest(10)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
-}
+func (app *Application) handleCreateNote(w http.ResponseWriter, r *http.Request) {
+	var p types.NoteRequest
+	ReadJSONRequest(w, r, &p)
+	// TODO: Validate payload
 
-func handleCreateNote(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var p models.NoteRequest
-		ReadJSONRequest(w, r, &p)
-		// TODO: Validate payload
-
-		data, err := app.NoteStore.CreateOne(p)
-		WriteJSONResponse(w, err, http.StatusCreated, data)
-	}
+	data, err := app.Service.Notes.CreateOne(p)
+	WriteJSONResponse(w, err, http.StatusCreated, data)
 }
 
 // ----------------------------------------------------------------------------
 // Handlers in specific note context
 // ----------------------------------------------------------------------------
 
-func handleReadNote(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
-		data, err := app.NoteStore.ReadOne(id)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
+func (app *Application) handleReadNote(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
+	data, err := app.Service.Notes.ReadOne(id)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleUpdateNote(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
-		var p models.NoteRequest
-		ReadJSONRequest(w, r, &p)
-		// TODO: Validate payload
+func (app *Application) handleUpdateNote(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
+	var p types.NoteRequest
+	ReadJSONRequest(w, r, &p)
+	// TODO: Validate payload
 
-		data, err := app.NoteStore.UpdateOne(id, p)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
+	data, err := app.Service.Notes.UpdateOne(id, p)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleDeleteNote(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
-		data, err := app.NoteStore.DeleteOne(id)
-		WriteJSONResponse(w, err, http.StatusNoContent, data)
-	}
+func (app *Application) handleDeleteNote(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
+	data, err := app.Service.Notes.DeleteOne(id)
+	WriteJSONResponse(w, err, http.StatusNoContent, data)
 }

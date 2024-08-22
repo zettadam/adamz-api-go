@@ -5,14 +5,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/zettadam/adamz-api-go/internal/models"
+	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
 type PostStore struct {
 	DB *pgxpool.Pool
 }
 
-func (s *PostStore) ReadLatest(limit int) ([]models.Post, error) {
+func (s *PostStore) ReadLatest(limit int) ([]types.Post, error) {
 	rows, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM posts
@@ -22,10 +22,10 @@ func (s *PostStore) ReadLatest(limit int) ([]models.Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[models.Post])
+	return pgx.CollectRows(rows, pgx.RowToStructByName[types.Post])
 }
 
-func (s *PostStore) CreateOne(d models.PostRequest) (models.Post, error) {
+func (s *PostStore) CreateOne(d types.PostRequest) (types.Post, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO posts (
@@ -36,26 +36,26 @@ func (s *PostStore) CreateOne(d models.PostRequest) (models.Post, error) {
 		d.Title, d.Slug, d.Abstract, d.Body, d.Significance, d.PublishedAt, d.Tags,
 	)
 	if err != nil {
-		return models.Post{}, err
+		return types.Post{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Post])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.Post])
 }
 
-func (s *PostStore) ReadOne(id int64) (models.Post, error) {
+func (s *PostStore) ReadOne(id int64) (types.Post, error) {
 	rows, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM posts WHERE id = $1`,
 		id)
 	if err != nil {
-		return models.Post{}, err
+		return types.Post{}, err
 	}
-	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[models.Post])
+	return pgx.CollectOneRow(rows, pgx.RowToStructByPos[types.Post])
 }
 
 func (s *PostStore) UpdateOne(
 	id int64,
-	d models.PostRequest,
-) (models.Post, error) {
+	d types.PostRequest,
+) (types.Post, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`UPDATE posts SET (
@@ -79,9 +79,9 @@ func (s *PostStore) UpdateOne(
 		d.Tags,
 	)
 	if err != nil {
-		return models.Post{}, err
+		return types.Post{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.Post])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.Post])
 }
 
 func (s *PostStore) DeleteOne(id int64) (int64, error) {

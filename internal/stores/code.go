@@ -5,14 +5,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/zettadam/adamz-api-go/internal/models"
+	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
 type CodeSnippetStore struct {
 	DB *pgxpool.Pool
 }
 
-func (s *CodeSnippetStore) ReadLatest(limit int) ([]models.CodeSnippet, error) {
+func (s *CodeSnippetStore) ReadLatest(limit int) ([]types.CodeSnippet, error) {
 	rows, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM code_snippets
@@ -22,12 +22,12 @@ func (s *CodeSnippetStore) ReadLatest(limit int) ([]models.CodeSnippet, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pgx.CollectRows(rows, pgx.RowToStructByName[models.CodeSnippet])
+	return pgx.CollectRows(rows, pgx.RowToStructByName[types.CodeSnippet])
 }
 
 func (s *CodeSnippetStore) CreateOne(
-	d models.CodeSnippetRequest,
-) (models.CodeSnippet, error) {
+	d types.CodeSnippetRequest,
+) (types.CodeSnippet, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`INSERT INTO code_snippets (
@@ -38,27 +38,27 @@ func (s *CodeSnippetStore) CreateOne(
 		d.Title, d.Description, d.Language, d.Body, d.PublishedAt, d.Tags,
 	)
 	if err != nil {
-		return models.CodeSnippet{}, err
+		return types.CodeSnippet{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.CodeSnippet])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.CodeSnippet])
 }
 
-func (s *CodeSnippetStore) ReadOne(id int64) (models.CodeSnippet, error) {
+func (s *CodeSnippetStore) ReadOne(id int64) (types.CodeSnippet, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`SELECT * FROM code_snippets WHERE id = $1`,
 		id,
 	)
 	if err != nil {
-		return models.CodeSnippet{}, err
+		return types.CodeSnippet{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.CodeSnippet])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.CodeSnippet])
 }
 
 func (s *CodeSnippetStore) UpdateOne(
 	id int64,
-	d models.CodeSnippetRequest,
-) (models.CodeSnippet, error) {
+	d types.CodeSnippetRequest,
+) (types.CodeSnippet, error) {
 	result, err := s.DB.Query(
 		context.Background(),
 		`UPDATE code_snippets SET (
@@ -80,9 +80,9 @@ func (s *CodeSnippetStore) UpdateOne(
 		d.Tags,
 	)
 	if err != nil {
-		return models.CodeSnippet{}, err
+		return types.CodeSnippet{}, err
 	}
-	return pgx.CollectOneRow(result, pgx.RowToStructByPos[models.CodeSnippet])
+	return pgx.CollectOneRow(result, pgx.RowToStructByPos[types.CodeSnippet])
 }
 
 func (s *CodeSnippetStore) DeleteOne(id int64) (int64, error) {

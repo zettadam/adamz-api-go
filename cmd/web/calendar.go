@@ -4,71 +4,45 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/zettadam/adamz-api-go/internal/config"
-	"github.com/zettadam/adamz-api-go/internal/models"
+	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
-func CalendarRouter(app *config.Application) http.Handler {
-	r := chi.NewRouter()
-
-	r.Get("/", handleReadLatestEvents(app))
-	r.Post("/", handleCreateEvent(app))
-
-	r.Route("/{id}", func(r chi.Router) {
-		r.Get("/", handleReadEvent(app))
-		r.Put("/", handleUpdateEvent(app))
-		r.Delete("/", handleDeleteEvent(app))
-	})
-
-	return r
+func (app *Application) handleReadLatestEvents(w http.ResponseWriter, r *http.Request) {
+	data, err := app.Service.Events.ReadLatest(10)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleReadLatestEvents(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := app.EventStore.ReadLatest(10)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
-}
+func (app *Application) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
+	var p types.EventRequest
+	ReadJSONRequest(w, r, &p)
+	// TODO: Validate payload
 
-func handleCreateEvent(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var p models.EventRequest
-		ReadJSONRequest(w, r, &p)
-		// TODO: Validate payload
-
-		data, err := app.EventStore.CreateOne(p)
-		WriteJSONResponse(w, err, http.StatusCreated, data)
-	}
+	data, err := app.Service.Events.CreateOne(p)
+	WriteJSONResponse(w, err, http.StatusCreated, data)
 }
 
 // ----------------------------------------------------------------------------
 // Handlers in specific code snippet context
 // ----------------------------------------------------------------------------
 
-func handleReadEvent(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
-		data, err := app.EventStore.ReadOne(id)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
+func (app *Application) handleReadEvent(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
+	data, err := app.Service.Events.ReadOne(id)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleUpdateEvent(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
-		var p models.EventRequest
-		ReadJSONRequest(w, r, &p)
-		// TODO: Validate payload
+func (app *Application) handleUpdateEvent(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
+	var p types.EventRequest
+	ReadJSONRequest(w, r, &p)
+	// TODO: Validate payload
 
-		data, err := app.EventStore.UpdateOne(id, p)
-		WriteJSONResponse(w, err, http.StatusOK, data)
-	}
+	data, err := app.Service.Events.UpdateOne(id, p)
+	WriteJSONResponse(w, err, http.StatusOK, data)
 }
 
-func handleDeleteEvent(app *config.Application) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := ParseId(w, chi.URLParam(r, "id"))
-		data, err := app.EventStore.DeleteOne(id)
-		WriteJSONResponse(w, err, http.StatusNoContent, data)
-	}
+func (app *Application) handleDeleteEvent(w http.ResponseWriter, r *http.Request) {
+	id := ParseId(w, chi.URLParam(r, "id"))
+	data, err := app.Service.Events.DeleteOne(id)
+	WriteJSONResponse(w, err, http.StatusNoContent, data)
 }
