@@ -16,7 +16,7 @@ type Task struct {
 type TaskRequest struct {
 	Id          *int64     `json:"id"`
 	TaskId      *int64     `json:"task_id"`
-	Title       string     `json:"title"`
+	Title       string     `json:"title" validate:"required"`
 	Description *string    `json:"description"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   *time.Time `json:"updated_at"`

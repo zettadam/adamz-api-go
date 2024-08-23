@@ -1,9 +1,11 @@
 package web
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
@@ -15,7 +17,15 @@ func (app *Application) handleReadLatestCodeSnippets(w http.ResponseWriter, r *h
 func (app *Application) handleCreateCodeSnippet(w http.ResponseWriter, r *http.Request) {
 	var p types.CodeSnippetRequest
 	ReadJSONRequest(w, r, &p)
-	// TODO: Validate payload
+
+	err := validator.New().Struct(p)
+	validationErrors := err.(validator.ValidationErrors)
+	if err != nil {
+		slog.Error("Code snippet validation errors", slog.Any("details", validationErrors))
+		WriteJSONResponse(w, err, http.StatusNotAcceptable, p)
+		return
+	}
+
 	data, err := app.Service.CodeSnippets.CreateOne(p)
 	WriteJSONResponse(w, err, http.StatusCreated, data)
 }
@@ -34,7 +44,15 @@ func (app *Application) handleUpdateCodeSnippet(w http.ResponseWriter, r *http.R
 	id := ParseId(w, chi.URLParam(r, "id"))
 	var p types.CodeSnippetRequest
 	ReadJSONRequest(w, r, &p)
-	// TODO: Validate payload
+
+	err := validator.New().Struct(p)
+	validationErrors := err.(validator.ValidationErrors)
+	if err != nil {
+		slog.Error("Code snippet validation errors", slog.Any("details", validationErrors))
+		WriteJSONResponse(w, err, http.StatusNotAcceptable, p)
+		return
+	}
+
 	data, err := app.Service.CodeSnippets.UpdateOne(id, p)
 	WriteJSONResponse(w, err, http.StatusOK, data)
 }

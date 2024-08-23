@@ -1,9 +1,11 @@
 package web
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 	"github.com/zettadam/adamz-api-go/internal/types"
 )
 
@@ -15,7 +17,14 @@ func (app *Application) handleReadLatestEvents(w http.ResponseWriter, r *http.Re
 func (app *Application) handleCreateEvent(w http.ResponseWriter, r *http.Request) {
 	var p types.EventRequest
 	ReadJSONRequest(w, r, &p)
-	// TODO: Validate payload
+
+	err := validator.New().Struct(p)
+	validationErrors := err.(validator.ValidationErrors)
+	if err != nil {
+		slog.Error("Event validation errors", slog.Any("details", validationErrors))
+		WriteJSONResponse(w, err, http.StatusNotAcceptable, p)
+		return
+	}
 
 	data, err := app.Service.Events.CreateOne(p)
 	WriteJSONResponse(w, err, http.StatusCreated, data)
@@ -35,7 +44,14 @@ func (app *Application) handleUpdateEvent(w http.ResponseWriter, r *http.Request
 	id := ParseId(w, chi.URLParam(r, "id"))
 	var p types.EventRequest
 	ReadJSONRequest(w, r, &p)
-	// TODO: Validate payload
+
+	err := validator.New().Struct(p)
+	validationErrors := err.(validator.ValidationErrors)
+	if err != nil {
+		slog.Error("Event validation errors", slog.Any("details", validationErrors))
+		WriteJSONResponse(w, err, http.StatusNotAcceptable, p)
+		return
+	}
 
 	data, err := app.Service.Events.UpdateOne(id, p)
 	WriteJSONResponse(w, err, http.StatusOK, data)

@@ -16,7 +16,7 @@ type Event struct {
 
 type EventRequest struct {
 	Id          *int64     `json:"id"`
-	Title       string     `json:"title"`
+	Title       string     `json:"title" validate:"required"`
 	Description *string    `json:"slug"`
 	StartTime   *time.Time `json:"start_time"`
 	EndTime     *time.Time `json:"end_time"`

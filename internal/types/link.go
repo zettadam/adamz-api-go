@@ -18,10 +18,10 @@ type Link struct {
 
 type LinkRequest struct {
 	Id           *int64     `json:"id"`
-	Url          string     `json:"url"`
-	Title        string     `json:"title"`
+	Url          string     `json:"url" validate:"required"`
+	Title        string     `json:"title" validate:"required"`
 	Description  *string    `json:"description"`
-	Significance int        `json:"significance"`
+	Significance int        `json:"significance" validate:"required,lte=0,gte=120"`
 	PublishedAt  *time.Time `json:"published_at"`
 	Tags         []*string  `json:"tags"`
 	CreatedAt    time.Time  `json:"created_at"`

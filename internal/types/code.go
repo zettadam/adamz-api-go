@@ -18,9 +18,9 @@ type CodeSnippet struct {
 
 type CodeSnippetRequest struct {
 	Id          *int64     `json:"id"`
-	Title       string     `json:"title"`
+	Title       string     `json:"title" validate:"required"`
 	Description *string    `json:"description"`
-	Language    *string    `json:"language"`
+	Language    *string    `json:"language" validate:"required"`
 	Body        *string    `json:"body"`
 	PublishedAt *time.Time `json:"published_at"`
 	Tags        []*string  `json:"tags"`

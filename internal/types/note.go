@@ -17,9 +17,9 @@ type Note struct {
 
 type NoteRequest struct {
 	Id           *int64     `json:"id"`
-	Title        string     `json:"title"`
+	Title        string     `json:"title" validate:"required"`
 	Body         *string    `json:"body"`
-	Significance int        `json:"significance"`
+	Significance int        `json:"significance" validate:"required,lte=0,gte=120`
 	PublishedAt  *time.Time `json:"published_at"`
 	Tags         []*string  `json:"tags"`
 	CreatedAt    time.Time  `json:"created_at"`

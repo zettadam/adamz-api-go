@@ -20,11 +20,11 @@ type (
 
 	PostRequest struct {
 		Id           *int64     `json:"id"`
-		Title        string     `json:"title"`
-		Slug         string     `json:"slug"`
+		Title        string     `json:"title" validate:"required"`
+		Slug         string     `json:"slug" validate:"required"`
 		Abstract     *string    `json:"abstract"`
 		Body         *string    `json:"body"`
-		Significance int        `json:"significance"`
+		Significance int        `json:"significance" validate:"required,gte=0,lte=120"`
 		Tags         []*string  `json:"tags"`
 		PublishedAt  *time.Time `json:"published_at"`
 	}
